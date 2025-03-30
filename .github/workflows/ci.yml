@@ -1,0 +1,78 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+    tags: ["*"]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    name: Lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          python-version: 3.10
+
+
+      - name: Install lint dependencies
+        run: |
+          uv pip install ruff
+
+      - name: Run Black
+        run: ruff format --check .
+
+      - name: Run flake8
+        run: ruff check
+
+  type-check:
+    needs: lint
+    runs-on: ubuntu-latest
+    name: Type-check (mypy)
+    strategy:
+      matrix:
+        python-version: [3.7, 3.13]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          python-version: ${{ matrix.python-version }}
+
+
+      - name: Run mypy with python ${{ matrix.python-version }}
+        run: uv run mypy
+
+  tests:
+    needs: type-check
+    name: Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            python-version: 3.7
+          - os: ubuntu-latest
+            python-version: 3.10
+          - os: ubuntu-latest
+            python-version: 3.13
+          - os: windows-latest
+            python-version: 3.13
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          python-version: ${{ matrix.python-version }}
+
+      - name: Run tests
+        run: uv run pytest
