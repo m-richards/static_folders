@@ -24,7 +24,7 @@ jobs:
         run: |
           uv pip install ruff
 
-      - name: Run Black
+      - name: Run Ruff format & Check
         run: ruff format --check .
 
       - name: Run flake8

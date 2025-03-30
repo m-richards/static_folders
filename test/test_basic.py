@@ -4,7 +4,7 @@ from pathlib import Path
 from static_folders import Folder
 
 
-def test_basic(tmp_path: Path):
+def test_basic(tmp_path: Path) -> None:
     f = Folder(tmp_path)
     assert f.to_path() == tmp_path
     assert os.fspath(f) == str(tmp_path)
@@ -16,7 +16,7 @@ def test_basic(tmp_path: Path):
     assert child_folder.to_path() == tmp_path / "out"
 
 
-def test_create(tmp_path: Path):
+def test_create(tmp_path: Path) -> None:
     class Nest2(Folder):
         nest: Folder
         file: Path = Path("file.txt")
@@ -37,7 +37,7 @@ def test_create(tmp_path: Path):
     assert not n.nest.file.is_file()
 
 
-def test_nested(tmp_path: Path):
+def test_nested(tmp_path: Path) -> None:
     tmp_path = Path(".")
 
     class PhotoYearFolder(Folder):
@@ -46,9 +46,7 @@ def test_nested(tmp_path: Path):
     class Photos(Folder):
         temp: Folder
         y2024: PhotoYearFolder
-        y2025: PhotoYearFolder = PhotoYearFolder(
-            Path("2025")
-        )  # provide concrete which doesn't have y prefix
+        y2025: PhotoYearFolder = PhotoYearFolder(Path("2025"))  # provide concrete which doesn't have y prefix
         y2026: PhotoYearFolder = PhotoYearFolder("2026")  # string arg is fine too
         readme: Path = Path("readme.md")
 
@@ -65,7 +63,7 @@ def test_nested(tmp_path: Path):
     assert isinstance(child_folder, PhotoYearFolder)
 
 
-def test_exotic_attributes_okay(tmp_path):
+def test_exotic_attributes_okay(tmp_path: Path) -> None:
     class A(Folder):
         attrib: lambda x: print(x)
 
