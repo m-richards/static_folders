@@ -11,6 +11,9 @@ from typing import Sequence
 
 U = TypeVar("U", bound="Folder")
 
+PathLike = typing.Union[str, Path]
+T = TypeVar("T", bound="Folder")
+
 
 @define(slots=False)
 class Folder:
@@ -23,7 +26,7 @@ class Folder:
         "_raw_location",
         "_child_folders",
     ]
-    _child_folders: list["Folder"] = field(init=False, default=Factory(list))
+    _child_folders: list[Folder] = field(init=False, default=Factory(list))
 
     @classmethod
     def from_string(cls, path: str) -> Self:
@@ -76,12 +79,12 @@ class Folder:
         return self.location / name
 
     @typing.overload
-    def get_subfolder(self, name: str, subclass_class: None = ...) -> "Folder": ...
+    def get_subfolder(self, name: str, subfolder_class: None = ...) -> Folder: ...
 
     @typing.overload
-    def get_subfolder(self, name: str, subclass_class: Type[U] = ...) -> U: ...
+    def get_subfolder(self, name: str, subfolder_class: Type[T] = ...) -> T: ...
 
-    def get_subfolder(self, name: str, *, subfolder_class: Type[U] | None = None) -> U | "Folder":
+    def get_subfolder(self, name: str, subfolder_class: Type[T] | None = None) -> T | Folder:
         if subfolder_class is None:
             return Folder(self.location / name)
         else:

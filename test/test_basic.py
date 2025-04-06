@@ -59,17 +59,19 @@ def test_nested(tmp_path: Path) -> None:
     assert photos.y2024.index == tmp_path / "y2024" / "index.md"
     assert photos.y2025.index == tmp_path / "2025" / "index.md"
     assert photos.y2026.index == tmp_path / "2026" / "index.md"
-    child_folder = photos.get_subfolder("2026", subfolder_class=PhotoYearFolder)
-    assert isinstance(child_folder, PhotoYearFolder)
+    child_folder2 = photos.get_subfolder("2026", subfolder_class=PhotoYearFolder)
+    child_folder2a = photos.get_subfolder("2026", subfolder_class=Folder)
+    assert isinstance(child_folder2, PhotoYearFolder)
+    assert isinstance(child_folder2a, Folder) and not isinstance(child_folder2a, PhotoYearFolder)  # noqa: PT018
 
 
 def test_exotic_attributes_okay(tmp_path: Path) -> None:
     class A(Folder):
-        attrib: lambda x: print(x)
+        attrib = lambda x: print(x)  # noqa:E731
 
     class B(Folder):
         class Nested(Folder):
-            attrib: lambda x: print(x)
+            attrib = lambda x: print(x)  # noqa:E731
 
         readme: Path = Path("readme.txt")
 
