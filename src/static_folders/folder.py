@@ -17,7 +17,7 @@ T = TypeVar("T", bound="Folder")
 
 
 def _get_annotations(obj: object) -> dict[str, object]:
-    if sys.version_info >= (3,10):
+    if sys.version_info >= (3, 10):
         return inspect.get_annotations(obj)
     # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
     else:
