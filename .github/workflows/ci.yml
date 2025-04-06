@@ -48,7 +48,7 @@ jobs:
 
 
       - name: Run mypy with python ${{ matrix.python-version }}
-        run: uv run mypy
+        run: uv run mypy .
 
   tests:
     needs: type-check
