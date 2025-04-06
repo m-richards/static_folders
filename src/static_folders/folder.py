@@ -54,7 +54,7 @@ class Folder:
         cls = type(self)
         # custom support for annotations which are sub-types of Folder, or Path
         # these are bound as "child-dir" objects
-        annotations = inspect.get_annotations(cls)
+        annotations = _get_annotations(cls)
 
         for attrib_name, annotation in annotations.items():
             if attrib_name in self._reserved_attributes:
