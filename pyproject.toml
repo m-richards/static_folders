@@ -19,7 +19,7 @@ build-backend = "hatchling.build"
 [dependency-groups]
 dev = [
 #    "mypy==1.8", # newest version of mypy supporting --python-version 3.7, but from an external venv
-    "mypy==1.4", # newest version of mypy supporting --python-version 3.7, but from an external venv
+    "mypy==1.4", # newest version of mypy supporting python 3.7 from within the same virtualenv
 #  uvx --with attrs mypy .
   # uvx mypy@1.8 --with attrs --python-version 3.7 .
 #  uvx --with . --with attrs mypy .
