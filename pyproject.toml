@@ -18,12 +18,13 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-#    "mypy==1.8", # newest version of mypy supporting --python-version 3.7, but from an external venv
-    "mypy==1.4", # newest version of mypy supporting python 3.7 from within the same virtualenv
-#  uvx --with attrs mypy .
-  # uvx mypy@1.8 --with attrs --python-version 3.7 .
-#  uvx --with . --with attrs mypy .
-
+    "mypy>=1.4 ; python_full_version == '3.7.*'", # newest version internally supporting 3.7.x
+    "mypy>=1.14 ; python_full_version == '3.8.*'",
+    "mypy>=1.15 ; python_full_version >= '3.9'",
+    #    "mypy==1.8", # newest version of mypy supporting --python-version 3.7, but from an external venv
+    #  uvx --with attrs mypy .
+    # uvx mypy@1.8 --with attrs --with . --python-version 3.7 .
+    #  uvx --with . --with attrs mypy .
     "pytest>=7.4.4",
     "ruff>=0.11.2",
 ]
