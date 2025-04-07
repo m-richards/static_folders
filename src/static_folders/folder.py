@@ -5,11 +5,15 @@ import os
 import sys
 import typing
 from pathlib import Path
-from types import ModuleType
 
 from attrs import define, field, Factory
 from typing_extensions import Type, TypeVar, Self, ClassVar
 from typing import Sequence, Any, Callable
+
+if typing.TYPE_CHECKING:
+    from types import ModuleType
+else:
+    ModuleType = type[Any]
 
 U = TypeVar("U", bound="Folder")
 
