@@ -7,8 +7,8 @@ import typing
 from pathlib import Path
 
 from attrs import define, field, Factory
-from typing_extensions import Type, TypeVar, Self, ClassVar
-from typing import Sequence, Any, Callable
+from typing_extensions import Self
+from typing import Sequence, Any, Callable, TypeVar, ClassVar, Type
 
 if typing.TYPE_CHECKING:
     from types import ModuleType
