@@ -13,7 +13,7 @@ from typing import Sequence, Any, Callable, TypeVar, ClassVar, Type
 if typing.TYPE_CHECKING:
     from types import ModuleType
 else:
-    ModuleType = type[Any]
+    ModuleType = Type[Any]
 
 U = TypeVar("U", bound="Folder")
 
