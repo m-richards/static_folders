@@ -17,14 +17,14 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "latest"
-          python-version: 3.10
+          python-version: "3.12"
 
 
       - name: Install lint dependencies
         run: |
           uv pip install ruff
 
-      - name: Run Black
+      - name: Run Ruff format & Check
         run: ruff format --check .
 
       - name: Run flake8
@@ -48,7 +48,7 @@ jobs:
 
 
       - name: Run mypy with python ${{ matrix.python-version }}
-        run: uv run mypy
+        run: uv run mypy .
 
   tests:
     needs: type-check
@@ -58,13 +58,13 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            python-version: 3.7
+            python-version: "3.7"
           - os: ubuntu-latest
-            python-version: 3.10
+            python-version: "3.10"
           - os: ubuntu-latest
-            python-version: 3.13
+            python-version: "3.13"
           - os: windows-latest
-            python-version: 3.13
+            python-version: "3.13"
     steps:
       - uses: actions/checkout@v3
 
