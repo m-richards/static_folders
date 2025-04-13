@@ -27,9 +27,9 @@ def _get_annotations(obj: Callable[..., object] | type[Any] | ModuleType) -> dic
     # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
     else:
         if isinstance(obj, type):
-            ann = obj.__dict__.get("__annotations__", None)
+            ann = obj.__dict__.get("__annotations__", {})
         else:
-            ann = getattr(obj, "__annotations__", None)
+            ann = getattr(obj, "__annotations__", {})
         return ann
 
 
