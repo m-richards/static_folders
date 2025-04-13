@@ -125,9 +125,10 @@ select = [
 
 ignore = [
   ### Intentionally disabled
-    "COM812","COM819" # ensured by formatter already
+    "COM812","COM819", # ensured by formatter already
   # module level import not at top of file
 #  "E402",
+  "SIM108", # prefer ternaries (makes stuff hard to read)
 #  # do not assign a lambda expression, use a def
 #  "E731",
 #  # controversial
