@@ -3,7 +3,7 @@ authors = ["Matt Richards <mrichards7@outlook.com.au>"]
 channels = ["conda-forge"]
 description = "Add a short description here"
 name = "static_folders"
-platforms = ["win-64"]
+platforms = ["win-64", "linux-64", "osx-arm64"]
 version = "0.1.0"
 
 [tasks]
