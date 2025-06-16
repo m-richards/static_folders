@@ -1,7 +1,7 @@
 [project]
 name = "static-folders"
 version = "0.1.0"
-description = "Add your description here"
+description = "Modelling Static folder structures for python applications"
 readme = "README.md"
 authors = [
     { name = "Matt Richards", email = "mrichards7@outlook.com.au" }
