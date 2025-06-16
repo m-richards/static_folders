@@ -17,7 +17,6 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
 #          version: "latest"
-          version: "0.6.14"
           python-version: "3.12"
 
 
@@ -40,6 +39,20 @@ jobs:
         python-version: [3.7, 3.13]
     steps:
       - uses: actions/checkout@v4
+
+      # install pixi (only needed for python 3.7)
+      - uses: prefix-dev/setup-pixi@v0.8.3
+        with:
+          pixi-version: v0.48.1
+          cache: true
+          auth-host: prefix.dev
+          auth-token: ${{ secrets.PREFIX_DEV_TOKEN }}
+
+      - name: Sideload a python for 3.7 (uv version is not really supported but seems to work sometimes?)
+        # https://github.com/astral-sh/uv/issues/12122
+        if: ${{ matrix.python-version == '3.7' }}
+        # note there is also
+        run: pixi global install "python=3.7"
 
       - name: Install the latest version of uv
         uses: astral-sh/setup-uv@v5
