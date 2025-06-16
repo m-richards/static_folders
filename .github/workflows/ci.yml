@@ -45,8 +45,8 @@ jobs:
         with:
           pixi-version: v0.48.1
           cache: true
-          auth-host: prefix.dev
-          auth-token: ${{ secrets.PREFIX_DEV_TOKEN }}
+#          auth-host: prefix.dev
+#          auth-token: ${{ secrets.PREFIX_DEV_TOKEN }}
 
       - name: Sideload a python for 3.7 (uv version is not really supported but seems to work sometimes?)
         # https://github.com/astral-sh/uv/issues/12122
