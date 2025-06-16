@@ -129,6 +129,7 @@ ignore = [
   # module level import not at top of file
 #  "E402",
   "SIM108", # prefer ternaries (makes stuff hard to read)
+  # Default ignores, incrementally disabled
 #  # do not assign a lambda expression, use a def
 #  "E731",
 #  # controversial
