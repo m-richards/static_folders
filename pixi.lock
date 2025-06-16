@@ -25,7 +25,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/vc-14.3-h2b53caa_26.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/vc14_runtime-14.42.34438-hfd919c2_26.conda
       - pypi: https://files.pythonhosted.org/packages/8b/54/b1ae86c0973cc6f0210b53d508ca3641fb6d0c56823f288d108bc7ab3cc8/typing_extensions-4.13.2-py3-none-any.whl
-      - pypi: .\
+      - pypi: .
   latest:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
@@ -61,7 +61,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/ucrt-10.0.22621.0-h57928b3_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/vc-14.3-h2b53caa_26.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/vc14_runtime-14.42.34438-hfd919c2_26.conda
-      - pypi: .\
+      - pypi: .
   min:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
@@ -95,7 +95,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/vc14_runtime-14.42.34438-hfd919c2_26.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/vs2015_runtime-14.42.34438-h7142326_26.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-3.15.0-pyhd8ed1ab_0.conda
-      - pypi: .\
+      - pypi: .
 packages:
 - conda: https://conda.anaconda.org/conda-forge/noarch/attrs-24.2.0-pyh71513ae_0.conda
   sha256: 28dba85a7e0f7fb57d7315e13f603d1e41b83c5b88aa2a602596b52c833a2ff8
@@ -313,6 +313,8 @@ packages:
   - typing_extensions >=3.10
   - vc >=14.2,<15
   - vs2015_runtime >=14.29.30139
+  arch: x86_64
+  platform: win
   license: MIT
   license_family: MIT
   purls:
@@ -331,6 +333,8 @@ packages:
   - ucrt >=10.0.20348.0
   - vc >=14.2,<15
   - vc14_runtime >=14.29.30139
+  arch: x86_64
+  platform: win
   license: MIT
   license_family: MIT
   purls:
@@ -427,6 +431,8 @@ packages:
   - ucrt >=10.0.20348.0
   - vc >=14.2,<15
   - vs2015_runtime >=14.29.30139
+  arch: x86_64
+  platform: win
   license: BSD-3-Clause
   license_family: BSD
   purls:
@@ -442,6 +448,8 @@ packages:
   - ucrt >=10.0.20348.0
   - vc >=14.2,<15
   - vc14_runtime >=14.29.30139
+  arch: x86_64
+  platform: win
   license: BSD-3-Clause
   license_family: BSD
   purls:
@@ -559,10 +567,10 @@ packages:
   purls: []
   size: 1105027
   timestamp: 1742083977188
-- pypi: .\
+- pypi: .
   name: static-folders
   version: 0.1.0
-  sha256: c4a92c34854c32beb3ca8b37f77505c9bcdd66473d34dfcb8df1ef2b4a4e1177
+  sha256: f9323a1859d1d86caa4059299bc42ee30eab3291be24e1065376ae110c700046
   requires_dist:
   - attrs>=24.2.0
   - typing-extensions>=4.7.1
@@ -610,6 +618,8 @@ packages:
   - python_abi 3.7.* *_cp37m
   - vc >=14.1,<15
   - vs2015_runtime >=14.16.27033
+  arch: x86_64
+  platform: win
   license: Apache-2.0
   license_family: Apache
   purls:

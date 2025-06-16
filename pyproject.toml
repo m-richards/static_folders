@@ -36,7 +36,7 @@ target-version = "py37"
 
 [tool.ruff.lint]
 unfixable = []
-typing-modules = ["pandas._typing"]
+typing-modules = []
 
 select = [
   # pyflakes
