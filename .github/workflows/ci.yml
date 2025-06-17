@@ -36,7 +36,7 @@ jobs:
     name: Type-check (mypy)
     strategy:
       matrix:
-        python-version: [3.8, 3.13]
+        python-version: [3.7, 3.13]
     steps:
       - uses: actions/checkout@v4
 
@@ -50,10 +50,10 @@ jobs:
 #          auth-host: prefix.dev
 #          auth-token: ${{ secrets.PREFIX_DEV_TOKEN }}
 
-      - name: Sideload a python for 3.7 (uv version is not really supported but seems to work sometimes?)
-        # https://github.com/astral-sh/uv/issues/12122
-        if: ${{ matrix.python-version == '3.7' }}
-        run: pixi global install "python=3.7"
+#      - name: Sideload a python for 3.7 (uv version is not really supported but seems to work sometimes?)
+#        # https://github.com/astral-sh/uv/issues/12122
+#        if: ${{ matrix.python-version == '3.7' }}
+#        run: pixi global install "python=3.7"
 
       - name: Install the latest version of uv
         uses: astral-sh/setup-uv@v5
@@ -73,7 +73,7 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            python-version: "3.8"
+            python-version: "3.7"
           - os: ubuntu-latest
             python-version: "3.10"
           - os: ubuntu-latest
