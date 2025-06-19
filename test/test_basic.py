@@ -1,7 +1,11 @@
 import os
+import re
 from pathlib import Path
 
-from static_folders import Folder
+import pytest
+from attrs import define
+from static_folders import Folder, FolderPartition
+from static_folders.partitioned_folder import EnumeratedFolderPartition
 
 
 def test_basic(tmp_path: Path) -> None:
@@ -14,6 +18,17 @@ def test_basic(tmp_path: Path) -> None:
     child_folder = f.get_subfolder("out")
     assert isinstance(child_folder, Folder)
     assert child_folder.to_path() == tmp_path / "out"
+
+def test_missing_type_annotation(tmp_path):
+
+    # Footgun here that if file is not annotated, we don't re-write
+    @define
+    class SubFolder(Folder):
+        file = Path("file.txt")
+
+    with pytest.raises(TypeError, match=re.escape("Folder subclasses do not support Folder or Path type fields without type annotations")):
+        SubFolder(tmp_path)
+
 
 
 def test_create(tmp_path: Path) -> None:
@@ -79,35 +94,57 @@ def test_exotic_attributes_okay(tmp_path: Path) -> None:
     B(tmp_path)
 
 
-# def staticfolder(cls):
-#     annotations = inspect.get_annotations(cls)
-#     print(cls, annotations)
-#
-#     for k,v in annotations.items():
-#         if isinstance(v, Folder):
-#             cls.k = Folder()
-#
-# # @staticfolder
-#
-# class TestFolder(Folder):
-#     item: Path = Path("foo.txt")
-#
-# class RepoFolder(Folder):
-#     child: TestFolder
-#     path: Path = Path("out.txt")
-#     # path2: Path = "out.txt" # arguably could be supported but might confuse mypy
-#     # just here for legibility
-#
-#
-# r = RepoFolder(Path("foo"))
-# print(r)
-# print(r.child)
-# print(r.path)
-#
-#
-#
-# r.child.item
-# reveal_type(r.child.item)
-# reveal_type(r.child)
-#
-# from attrs import asdict, define, make_class, Factory
+class AsgsYearDir(Folder):
+    """Test / example class."""
+    sa1:Path = Path("SA1.gpkg")
+    sa2:Path = Path("SA2.gpkg")
+
+class AsgsLayersByYear(FolderPartition[AsgsYearDir]):
+    pass
+
+def test_partitioned_folder(tmp_path: Path) -> None:
+    root_dir = tmp_path / "new_dir_not_on_disk"
+
+    f = AsgsLayersByYear(root_dir, partition_class=AsgsYearDir)
+    y2016_dir = f.get_subfolder("2016")
+    assert isinstance(y2016_dir, AsgsYearDir)
+    assert y2016_dir.sa1 == root_dir / "2016" / "SA1.gpkg"
+
+    # check/ document IO behaviour
+    assert not f.to_path().exists()
+    assert not y2016_dir.sa1.exists()
+    f.create()
+    assert f.to_path().is_dir()
+    # child under partition can't be materialised
+    assert not y2016_dir.sa1.exists()
+
+def test_enumerated_partitioned_folder(tmp_path: Path) -> None:
+    # repeat test with EnumeratedFolderPartition
+
+    class EnumeratedAsgsLayersByYear(EnumeratedFolderPartition[AsgsYearDir]):
+        partition_names = ["2016", "2021"]
+
+    root_dir = tmp_path / "new_dir_not_on_disk"
+
+
+    f = EnumeratedAsgsLayersByYear(root_dir, partition_class=AsgsYearDir)
+    y2016_dir = f.get_subfolder("2016")
+    assert isinstance(y2016_dir, AsgsYearDir)
+    assert y2016_dir.sa1 == root_dir / "2016" / "SA1.gpkg"
+
+    # check/ document IO behaviour
+    assert not f.to_path().exists()
+    assert not y2016_dir.sa1.exists()
+    f.create()
+    assert f.to_path().is_dir()
+    # listed child under partition can be materialised
+    assert y2016_dir.to_path().is_dir()
+    assert f.get_subfolder("2021").to_path().exists()
+    assert not f.get_subfolder("2023").to_path().exists()
+    with pytest.raises(NameError):
+        f.get_partition("2023")
+
+
+
+
+

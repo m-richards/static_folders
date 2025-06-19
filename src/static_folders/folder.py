@@ -6,9 +6,12 @@ import sys
 import typing
 from pathlib import Path
 
-from attrs import define, field, Factory
+import attrs
+from attrs import define, field, Factory, fields
 from typing_extensions import Self
 from typing import Sequence, Any, Callable, TypeVar, ClassVar, Type
+
+from static_folders.folder_interface import FolderLike
 
 if typing.TYPE_CHECKING:
     from types import ModuleType
@@ -32,9 +35,31 @@ def _get_annotations(obj: Callable[..., object] | type[Any] | ModuleType) -> dic
             ann = getattr(obj, "__annotations__", {})
         return ann
 
+from types import FunctionType
+from typing import Any, Type
+
+def get_class_attributes(cls: Type[Any]) -> dict[str, Any]:
+    return {
+        k: v for k, v in cls.__dict__.items()
+        if not k.startswith('__')
+        and not isinstance(v, (FunctionType, staticmethod, classmethod, property))
+    }
+
 
 @define(slots=False)
-class Folder:
+class Folder(FolderLike):
+    """Representation of a Folder on disk, containing standard files or subfolders.
+
+    ```
+    class Photos(Folder):
+        temp: Folder
+        y2024: PhotoYearFolder
+        y2025: PhotoYearFolder = PhotoYearFolder(Path("2025"))  # provide concrete which doesn't have y prefix
+        y2026: PhotoYearFolder = PhotoYearFolder("2026")  # string arg is fine too
+        readme: Path = Path("readme.md")
+    ```
+    """
+
     _raw_location: os.PathLike | str
     location: Path = field(init=False)
 
@@ -60,6 +85,16 @@ class Folder:
         # custom support for annotations which are sub-types of Folder, or Path
         # these are bound as "child-dir" objects
         annotations = _get_annotations(cls)
+
+        folder_type_fields = [k for k,v in cls.__dict__.items() if isinstance(v, FolderLike) or isinstance(v, Path)]
+
+        covered_keys = set(annotations.keys()).union(self._reserved_attributes)
+        fields_wo_annotations = [i for i in folder_type_fields if i not in covered_keys]
+        if len(fields_wo_annotations) >0:
+            # TODO ideally would do this at "compile time" but I probably don't want a metaclass just for that
+            # (but could I do it with a decorator, like attrs?)
+            raise TypeError(f"Folder subclasses do not support Folder or Path type fields without type annotations, to avoid confusing error cases. Fields {fields_wo_annotations} are missing annotations.")
+
 
         for attrib_name, annotation in annotations.items():
             if attrib_name in self._reserved_attributes:
