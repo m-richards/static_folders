@@ -5,10 +5,12 @@ import os
 import sys
 import typing
 from pathlib import Path
+from typing import Sequence, Any, Callable, TypeVar, ClassVar, Type
 
 from attrs import define, field, Factory
 from typing_extensions import Self
-from typing import Sequence, Any, Callable, TypeVar, ClassVar, Type
+
+from static_folders.folder_interface import FolderLike
 
 if typing.TYPE_CHECKING:
     from types import ModuleType
@@ -33,8 +35,20 @@ def _get_annotations(obj: Callable[..., object] | type[Any] | ModuleType) -> dic
         return ann
 
 
-@define(slots=False)
-class Folder:
+@define(slots=False)  # messes type annotation detection for nested classes up
+class Folder(FolderLike):
+    """Representation of a Folder on disk, containing standard files or subfolders.
+
+    ```
+    class Photos(Folder):
+        temp: Folder
+        y2024: PhotoYearFolder
+        y2025: PhotoYearFolder = PhotoYearFolder(Path("2025"))  # provide concrete which doesn't have y prefix
+        y2026: PhotoYearFolder = PhotoYearFolder("2026")  # string arg is fine too
+        readme: Path = Path("readme.md")
+    ```
+    """
+
     _raw_location: os.PathLike | str
     location: Path = field(init=False)
 
@@ -60,6 +74,19 @@ class Folder:
         # custom support for annotations which are sub-types of Folder, or Path
         # these are bound as "child-dir" objects
         annotations = _get_annotations(cls)
+
+        folder_type_fields = [k for k, v in cls.__dict__.items() if isinstance(v, (FolderLike, Path))]
+
+        covered_keys = set(annotations.keys()).union(self._reserved_attributes)
+        fields_wo_annotations = [i for i in folder_type_fields if i not in covered_keys]
+        if len(fields_wo_annotations) > 0:
+            # TODO ideally would do this at "compile time" but I probably don't want a metaclass just for that
+            # (but could I do it with a decorator, like attrs?)
+            msg = (
+                "Folder subclasses do not support FolderLike or Path type fields without type annotations, "
+                f"to avoid confusing error cases. Fields {fields_wo_annotations} are missing annotations."
+            )
+            raise TypeError(msg)
 
         for attrib_name, annotation in annotations.items():
             if attrib_name in self._reserved_attributes:
