@@ -20,7 +20,7 @@ def test_basic(tmp_path: Path) -> None:
     assert child_folder.to_path() == tmp_path / "out"
 
 
-def test_missing_type_annotation(tmp_path):
+def test_missing_type_annotation(tmp_path: Path) -> None:
     # Footgun here that if file is not annotated, we don't re-write
     @define
     class SubFolder(Folder):
@@ -128,7 +128,7 @@ def test_enumerated_partitioned_folder(tmp_path: Path) -> None:
     # repeat test with EnumeratedFolderPartition
 
     class EnumeratedAsgsLayersByYear(EnumeratedFolderPartition[AsgsYearDir]):
-        partition_names = ["2016", "2021"]
+        partition_names = ("2016", "2021")
 
     root_dir = tmp_path / "new_dir_not_on_disk"
 

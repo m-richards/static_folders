@@ -1,7 +1,13 @@
+from __future__ import annotations
+
+import typing
+
 from typing_extensions import Protocol, Self, Type, TypeVar, runtime_checkable
 
+if typing.TYPE_CHECKING:
+    from pathlib import Path
+
 T = TypeVar("T")
-from pathlib import Path
 
 
 @runtime_checkable

@@ -1,14 +1,17 @@
 from __future__ import annotations
+
 import os
 import typing
-from collections.abc import Sequence
 from pathlib import Path
-from typing_extensions import Self, TypeVar, Generic, ClassVar, Type
 
 from attrs import define, field
+from typing_extensions import Self, TypeVar, ClassVar, Type
 
 from static_folders import Folder
 from static_folders.folder_interface import FolderLike
+
+if typing.TYPE_CHECKING:
+    from collections.abc import Sequence
 
 T = TypeVar("T", bound=Folder)
 U = TypeVar("U", bound=Folder)
@@ -72,15 +75,16 @@ class EnumeratedFolderPartition(FolderPartition[U]):
         """Extra Api to explicit reference a partition. Raises a NameError if partition isn't pre-defined.
 
         Note that if override access is required to append a partition, you can use
-        folder.get_subfolder(name, subfolder_class=type(folder)). Omitting subfolder_class will trigger the same validation
-        as in get_partition.
+        folder.get_subfolder(name, subfolder_class=type(folder)),
+        but omitting subfolder_class will trigger the same validation as in get_partition.
         """
         if name not in self.partition_names:
             # TODO should this warn instead?
-            raise NameError(
+            msg = (
                 f"Received partition name {name!r} which is not defined in `partition_names`."
                 f"Use get_subfolder() to access a non conforming subfolder."
             )
+            raise NameError(msg)
         return self.partition_class(self.location / name)
 
     def create(self, *, mode: int = 0o777, parents: bool = True, exist_ok: bool = True) -> None:
