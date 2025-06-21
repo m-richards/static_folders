@@ -35,7 +35,14 @@ def _get_annotations(obj: Callable[..., object] | type[Any] | ModuleType) -> dic
         return ann
 
 
-@define(slots=False)
+def _get_folder_like_fields(cls: type) -> list[str]:
+    folder_type_fields = [k for k, v in cls.__dict__.items() if isinstance(v, (FolderLike, Path))]
+    if hasattr(cls, "__slots__"):
+        folder_type_fields.extend([k for k, v in cls.__slots__.items() if isinstance(v, (FolderLike, Path))])
+    return folder_type_fields
+
+
+@define(slots=True)
 class Folder(FolderLike):
     """Representation of a Folder on disk, containing standard files or subfolders.
 
