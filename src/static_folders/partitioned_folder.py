@@ -68,7 +68,7 @@ class EnumeratedFolderPartition(FolderPartition[U]):
     """
 
     partition_names: ClassVar[Sequence[str]]
-    partition_names_expanded: Sequence[[str]] = field(init=False)
+    partition_names_expanded: Sequence[str] = field(init=False)
 
     def __attrs_post_init__(self) -> None:
         super().__attrs_post_init__()
