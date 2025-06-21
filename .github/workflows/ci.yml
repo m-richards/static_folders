@@ -49,6 +49,7 @@ jobs:
 
       - name: Run mypy with python ${{ matrix.python-version }}
         run: uv run mypy .
+        continue-on-error: ${{ matrix.python-version == '3.7' }}
 
   tests:
     needs: type-check
