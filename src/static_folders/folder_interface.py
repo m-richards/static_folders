@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typing
 
-from typing_extensions import Protocol, Self, Type, TypeVar, runtime_checkable
+from typing_extensions import Protocol, Type, TypeVar, runtime_checkable
 
 if typing.TYPE_CHECKING:
     from pathlib import Path
@@ -13,7 +13,6 @@ T = TypeVar("T")
 @runtime_checkable
 class FolderLike(Protocol[T]):
     location: Path
-
 
     def __fspath__(self) -> str: ...
 

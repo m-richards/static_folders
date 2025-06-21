@@ -28,7 +28,7 @@ def test_missing_type_annotation(tmp_path: Path) -> None:
 
     with pytest.raises(
         TypeError,
-        match=re.escape("Folder subclasses do not support Folder or Path type fields without type annotations"),
+        match=re.escape("Folder subclasses do not support FolderLike or Path type fields without type annotations"),
     ):
         SubFolder(tmp_path)
 
@@ -148,3 +148,33 @@ def test_enumerated_partitioned_folder(tmp_path: Path) -> None:
     assert not f.get_subfolder("2023").to_path().exists()
     with pytest.raises(NameError):
         f.get_partition("2023")
+
+
+def test_prefixed_enumerated_partitioned_folder(tmp_path: Path) -> None:
+    # repeat test with EnumeratedFolderPartition
+
+    class EnumeratedAsgsLayersByYear(EnumeratedFolderPartition[AsgsYearDir]):
+        partition_prefix = "year="
+        partition_names = ("2016", "2021")
+
+    root_dir = tmp_path / "new_dir_not_on_disk"
+
+    f = EnumeratedAsgsLayersByYear(root_dir, partition_class=AsgsYearDir)
+    y2016_dir = f.get_subfolder("year=2016")
+    assert isinstance(y2016_dir, AsgsYearDir)
+    assert y2016_dir.sa1 == root_dir / "year=2016" / "SA1.gpkg"
+    y2016_dir2 = f.get_partition("2016")
+    assert isinstance(y2016_dir2, AsgsYearDir)
+    assert y2016_dir2.sa1 == root_dir / "year=2016" / "SA1.gpkg"
+
+    # check/ document IO behaviour
+    assert not f.to_path().exists()
+    assert not y2016_dir.sa1.exists()
+    f.create()
+    assert f.to_path().is_dir()
+    # listed child under partition can be materialised
+    assert y2016_dir.to_path().is_dir()
+    assert f.get_subfolder("year=2021").to_path().exists()
+    assert not f.get_subfolder("year=2023").to_path().exists()
+    with pytest.raises(NameError):
+        f.get_partition("year=2023")

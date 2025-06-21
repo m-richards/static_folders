@@ -5,7 +5,7 @@ import typing
 from pathlib import Path
 
 from attrs import define, field
-from typing_extensions import Self, TypeVar, ClassVar, Type
+from typing_extensions import TypeVar, ClassVar, Type
 
 from static_folders import Folder
 from static_folders.folder_interface import FolderLike
@@ -18,10 +18,12 @@ U = TypeVar("U", bound=Folder)
 
 
 @define(slots=False)
-class FolderPartition(FolderLike[U]):  # TODO check double inherit works
+class FolderPartition(FolderLike[U]):
     _raw_location: os.PathLike | str
     partition_class: Type[U] = field(kw_only=True)
     location: Path = field(init=False)
+
+    partition_prefix: ClassVar[str] = ""
 
     def __attrs_post_init__(self) -> None:
         self.location = Path(os.fspath(self._raw_location))
@@ -46,6 +48,8 @@ class FolderPartition(FolderLike[U]):  # TODO check double inherit works
 
     def get_partition(self, name: str) -> U:
         """Extra Api to explicit reference a partition."""
+        if name.startswith(self.partition_prefix) is False:
+            name = f"{self.partition_prefix}{name}"
         return self.partition_class(self.location / name)
 
     def create(self, *, mode: int = 0o777, parents: bool = True, exist_ok: bool = True) -> None:
@@ -64,7 +68,11 @@ class EnumeratedFolderPartition(FolderPartition[U]):
     """
 
     partition_names: ClassVar[Sequence[str]]
-    # TODO partition prefix?
+    partition_names_expanded: Sequence[[str]] = field(init=False)
+
+    def __attrs_post_init__(self) -> None:
+        super().__attrs_post_init__()
+        self.partition_names_expanded = [f"{self.partition_prefix}{n}" for n in self.partition_names]
 
     def get_partition(self, name: str) -> U:
         """Extra Api to explicit reference a partition. Raises a NameError if partition isn't pre-defined.
@@ -73,7 +81,10 @@ class EnumeratedFolderPartition(FolderPartition[U]):
         folder.get_subfolder(name, subfolder_class=type(folder)),
         but omitting subfolder_class will trigger the same validation as in get_partition.
         """
-        if name not in self.partition_names:
+        if name in self.partition_names:
+            name = f"{self.partition_prefix}{name}"
+
+        if name not in self.partition_names_expanded:
             # TODO should this warn instead?
             msg = (
                 f"Received partition name {name!r} which is not defined in `partition_names`."
@@ -87,5 +98,5 @@ class EnumeratedFolderPartition(FolderPartition[U]):
 
         Variant on Pathlib.mkdir() with more sensible defaults for static folders context"""
         self.to_path().mkdir(mode=mode, parents=parents, exist_ok=exist_ok)
-        for partition in self.partition_names:
+        for partition in self.partition_names_expanded:
             self.get_subfolder(partition).create(mode=mode, parents=False, exist_ok=exist_ok)
