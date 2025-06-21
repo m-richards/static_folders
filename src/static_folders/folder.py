@@ -35,7 +35,7 @@ def _get_annotations(obj: Callable[..., object] | type[Any] | ModuleType) -> dic
         return ann
 
 
-@define(slots=False)
+@define(slots=True)  # messes type annotation detection for nested classes up
 class Folder(FolderLike):
     """Representation of a Folder on disk, containing standard files or subfolders.
 
@@ -75,7 +75,14 @@ class Folder(FolderLike):
         # these are bound as "child-dir" objects
         annotations = _get_annotations(cls)
 
-        folder_type_fields = [k for k, v in cls.__dict__.items() if isinstance(v, (FolderLike, Path))]
+        folder_type_fields = [
+            k
+            for k, v in cls.__dict__.items()
+            if isinstance(v, (FolderLike, Path))
+            # __qualname__ is used to detect if something is a nested FolderLike class (it will have __qualname__
+            # defined to show nest hierarchy, but an instance won't)
+            and not hasattr(v, "__qualname__")
+        ]
 
         covered_keys = set(annotations.keys()).union(self._reserved_attributes)
         fields_wo_annotations = [i for i in folder_type_fields if i not in covered_keys]
