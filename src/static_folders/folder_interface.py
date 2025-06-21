@@ -1,11 +1,11 @@
 from typing_extensions import Protocol, Self, Type, TypeVar, runtime_checkable
 
-T = TypeVar('T')
+T = TypeVar("T")
 from pathlib import Path
+
 
 @runtime_checkable
 class FolderLike(Protocol[T]):
-
     location: Path
 
     @classmethod
@@ -13,8 +13,7 @@ class FolderLike(Protocol[T]):
         """Alternate constructor from string (for discoverability"""
         ...
 
-    def __fspath__(self) -> str:
-        ...
+    def __fspath__(self) -> str: ...
 
     def to_path(self) -> Path:
         # going to not follow the advice of https://hynek.me/articles/python-subclassing-redux/
@@ -25,8 +24,6 @@ class FolderLike(Protocol[T]):
         # going to not follow the advice of https://hynek.me/articles/python-subclassing-redux/
         # since this should be the behaviour in all sane cases
         return self.location / name
-
-
 
     def get_subfolder(self, name: str, subfolder_class: Type[T] = ...) -> T:
         # TODO is this a bad idea? we will have other @overloads of this method
@@ -39,5 +36,3 @@ class FolderLike(Protocol[T]):
         # TODO think about these semantics more deeply
 
         Variant on Pathlib.mkdir() with more sensible defaults for static folders context"""
-
-

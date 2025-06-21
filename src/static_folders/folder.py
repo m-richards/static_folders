@@ -35,14 +35,16 @@ def _get_annotations(obj: Callable[..., object] | type[Any] | ModuleType) -> dic
             ann = getattr(obj, "__annotations__", {})
         return ann
 
+
 from types import FunctionType
 from typing import Any, Type
 
+
 def get_class_attributes(cls: Type[Any]) -> dict[str, Any]:
     return {
-        k: v for k, v in cls.__dict__.items()
-        if not k.startswith('__')
-        and not isinstance(v, (FunctionType, staticmethod, classmethod, property))
+        k: v
+        for k, v in cls.__dict__.items()
+        if not k.startswith("__") and not isinstance(v, (FunctionType, staticmethod, classmethod, property))
     }
 
 
@@ -86,15 +88,16 @@ class Folder(FolderLike):
         # these are bound as "child-dir" objects
         annotations = _get_annotations(cls)
 
-        folder_type_fields = [k for k,v in cls.__dict__.items() if isinstance(v, FolderLike) or isinstance(v, Path)]
+        folder_type_fields = [k for k, v in cls.__dict__.items() if isinstance(v, FolderLike) or isinstance(v, Path)]
 
         covered_keys = set(annotations.keys()).union(self._reserved_attributes)
         fields_wo_annotations = [i for i in folder_type_fields if i not in covered_keys]
-        if len(fields_wo_annotations) >0:
+        if len(fields_wo_annotations) > 0:
             # TODO ideally would do this at "compile time" but I probably don't want a metaclass just for that
             # (but could I do it with a decorator, like attrs?)
-            raise TypeError(f"Folder subclasses do not support Folder or Path type fields without type annotations, to avoid confusing error cases. Fields {fields_wo_annotations} are missing annotations.")
-
+            raise TypeError(
+                f"Folder subclasses do not support Folder or Path type fields without type annotations, to avoid confusing error cases. Fields {fields_wo_annotations} are missing annotations."
+            )
 
         for attrib_name, annotation in annotations.items():
             if attrib_name in self._reserved_attributes:
