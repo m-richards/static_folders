@@ -26,11 +26,6 @@ class FolderPartition(FolderLike[U]):  # TODO check double inherit works
     def __attrs_post_init__(self) -> None:
         self.location = Path(os.fspath(self._raw_location))
 
-    @classmethod
-    def from_string(cls, path: str) -> Self:
-        """Alternate constructor from string (for discoverability"""
-        return cls(path)
-
     def __fspath__(self) -> str:
         return str(self.location)
 

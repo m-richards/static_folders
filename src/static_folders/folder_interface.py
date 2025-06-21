@@ -14,10 +14,6 @@ T = TypeVar("T")
 class FolderLike(Protocol[T]):
     location: Path
 
-    @classmethod
-    def from_string(cls, path: str) -> Self:
-        """Alternate constructor from string (for discoverability"""
-        ...
 
     def __fspath__(self) -> str: ...
 
