@@ -42,7 +42,7 @@ def _get_folder_like_fields(cls: type) -> list[str]:
     return folder_type_fields
 
 
-@define(slots=True)
+@define(slots=False) # messes type annotation detection for nested classes up
 class Folder(FolderLike):
     """Representation of a Folder on disk, containing standard files or subfolders.
 
