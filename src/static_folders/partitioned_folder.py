@@ -32,17 +32,18 @@ class FolderPartition(FolderLike[U]):
         return str(self.location)
 
     @typing.overload
-    def get_subfolder(self, name: str, subfolder_class: None = ...) -> U: ...
+    def get_subfolder(self, name: str, subfolder_class: None = ...) -> Folder: ...
 
     @typing.overload
     def get_subfolder(self, name: str, subfolder_class: Type[T] = ...) -> T: ...
 
-    # TODO maybe adhering to the common api here is confusing?
-    def get_subfolder(self, name: str, subfolder_class: Type[T] | None = None) -> T | U:
+    def get_subfolder(self, name: str, subfolder_class: Type[T] | None = None) -> T:
+        """Retrieve a subfolder.
+
+        Note that this is convenience similar to a regular folder. To get a partition entry, use get_partition.
+        """
         if subfolder_class is None:
-            # Note, deliberately don't reference get_partition, don't want to play
-            # subclass hierarchy jumping game
-            return self.partition_class(self.location / name)
+            return Folder(self.location / name)
         else:
             return subfolder_class(self.location / name)
 
