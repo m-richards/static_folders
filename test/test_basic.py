@@ -90,6 +90,8 @@ def test_exotic_attributes_okay(tmp_path: Path) -> None:
         class Nested(Folder):
             attrib = lambda x: print(x)  # noqa:E731
 
+        subfolder: A = A("custom_name_not_subfolder")
+
         readme: Path = Path("readme.txt")
 
     A(tmp_path)
