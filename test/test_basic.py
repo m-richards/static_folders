@@ -3,16 +3,15 @@ import re
 from pathlib import Path
 
 import pytest
-from pytest import fixture
 from attrs import define
 from static_folders import Folder, FolderPartition
 from static_folders.partitioned_folder import EnumeratedFolderPartition
 
 
-@fixture
-def path_not_on_disk(tmp_path:Path)->Path:
+@pytest.fixture
+def path_not_on_disk(tmp_path: Path) -> Path:
     # get a path which pytest isn't mkdiring
-    return tmp_path /"new_dir_not_on_disk"
+    return tmp_path / "new_dir_not_on_disk"
 
 
 def test_basic(tmp_path: Path) -> None:
@@ -117,7 +116,6 @@ class AsgsLayersByYear(FolderPartition[AsgsYearDir]):
 
 
 def test_partitioned_folder(path_not_on_disk: Path) -> None:
-
     f = AsgsLayersByYear(path_not_on_disk, partition_class=AsgsYearDir)
     y2016_dir = f.get_subfolder("2016")
     assert isinstance(y2016_dir, AsgsYearDir)
@@ -137,7 +135,6 @@ def test_enumerated_partitioned_folder(path_not_on_disk: Path) -> None:
 
     class EnumeratedAsgsLayersByYear(EnumeratedFolderPartition[AsgsYearDir]):
         partition_names = ("2016", "2021")
-
 
     f = EnumeratedAsgsLayersByYear(path_not_on_disk, partition_class=AsgsYearDir)
     y2016_dir = f.get_subfolder("2016")
@@ -164,7 +161,6 @@ def test_prefixed_enumerated_partitioned_folder(path_not_on_disk: Path) -> None:
         partition_prefix = "year="
         partition_names = ("2016", "2021")
 
-
     f = EnumeratedAsgsLayersByYear(path_not_on_disk, partition_class=AsgsYearDir)
     y2016_dir = f.get_subfolder("year=2016")
     assert isinstance(y2016_dir, AsgsYearDir)
@@ -186,12 +182,13 @@ def test_prefixed_enumerated_partitioned_folder(path_not_on_disk: Path) -> None:
         f.get_partition("year=2023")
 
 
-def test_enumerated_subfolder_logical(path_not_on_disk:Path)->None:
+def test_enumerated_subfolder_logical(path_not_on_disk: Path) -> None:
     class EnumeratedAsgsLayersByYear(EnumeratedFolderPartition[AsgsYearDir]):
         partition_prefix = "year="
         partition_names = ("2016", "2021")
+
     f = EnumeratedAsgsLayersByYear(path_not_on_disk, partition_class=AsgsYearDir)
 
-    assert type(f.get_subfolder("foo")) == Folder # Shouldn't be AsgsYearDir, doesn't conform
-    assert type(f.get_subfolder("foo", subfolder_class=AsgsYearDir)) == AsgsYearDir
-    assert type(f.get_partition("2016")) == AsgsYearDir
+    assert type(f.get_subfolder("foo")) == Folder  # Shouldn't be AsgsYearDir, doesn't conform # noqa: E721
+    assert type(f.get_subfolder("foo", subfolder_class=AsgsYearDir)) == AsgsYearDir  # noqa: E721
+    assert type(f.get_partition("2016")) == AsgsYearDir  # noqa: E721
