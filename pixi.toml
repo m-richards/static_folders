@@ -11,9 +11,10 @@ format = "uvx ruff format"
 lint = "uvx ruff check"
 type_check = "uvx --with . --with attrs --with pytest mypy ."
 # SyntaxError: Non-UTF-8 code starting with '\xe8' in Scripts\mypy.exe
-type_check_min = "uvx --python 3.7 --with . --with attrs mypy python -m mypy ."
+#type_check_min = "uvx --python 3.7 --with . --with attrs mypy python -m mypy ."
 # TODO do with depends-on
-ci_all = {cmd = "pixi run format; pixi run lint; pixi run type_check"}
+ci_all_checks = {cmd = "pixi run format; pixi run lint; pixi run type_check"}
+#ci_tests = {cmd = "pixi run format; pixi run lint; pixi run type_check"}
 
 
 
@@ -25,10 +26,11 @@ static_folders = { path = ".", editable = true}
 
 [feature.py37.dependencies]
 python = "3.7.*"
+typing-extensions = "==4.7.1"
 
 [feature.py37.tasks]
 test = "pytest -rP ."
-typecheck_min = "python -m mypy ."
+type_check_min = "mypy ."
 
 [feature.py313.dependencies]
 python = "3.13.*"

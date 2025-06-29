@@ -171,6 +171,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/tk-8.6.13-noxft_hd72426e_102.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tomli-2.0.2-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/typed-ast-1.5.4-py37h540881e_0.tar.bz2
+      - conda: https://conda.anaconda.org/conda-forge/noarch/typing-extensions-4.7.1-hd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing_extensions-4.7.1-pyha770c72_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/xz-5.8.1-hbcc6ac9_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/xz-gpl-tools-5.8.1-hbcc6ac9_2.conda
@@ -198,6 +199,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/sqlite-3.50.2-hdb435a2_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tomli-2.0.2-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/typed-ast-1.5.4-py37hcc03f2d_0.tar.bz2
+      - conda: https://conda.anaconda.org/conda-forge/noarch/typing-extensions-4.7.1-hd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing_extensions-4.7.1-pyha770c72_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/ucrt-10.0.22621.0-h57928b3_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/vc-14.3-h41ae7f8_26.conda
@@ -1190,6 +1192,17 @@ packages:
   version: 4.14.0
   sha256: a1514509136dd0b477638fc68d6a91497af5076466ad0fa6c338e44e359944af
   requires_python: '>=3.9'
+- conda: https://conda.anaconda.org/conda-forge/noarch/typing-extensions-4.7.1-hd8ed1ab_0.conda
+  noarch: python
+  sha256: d5d19b8f5b275240c19616a46d67ec57250b3720ba88200da8c732c3fcbfc21d
+  md5: f96688577f1faa58096d06a45136afa2
+  depends:
+  - typing_extensions 4.7.1 pyha770c72_0
+  license: PSF-2.0
+  license_family: PSF
+  purls: []
+  size: 10080
+  timestamp: 1688315729011
 - conda: https://conda.anaconda.org/conda-forge/noarch/typing_extensions-4.14.0-pyhe01879c_0.conda
   sha256: 8561db52f278c5716b436da6d4ee5521712a49e8f3c70fcae5350f5ebb4be41c
   md5: 2adcd9bb86f656d3d43bf84af59a1faf
