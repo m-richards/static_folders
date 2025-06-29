@@ -37,7 +37,7 @@ class FolderPartition(FolderLike[U]):
     @typing.overload
     def get_subfolder(self, name: str, subfolder_class: Type[T] = ...) -> T: ...
 
-    def get_subfolder(self, name: str, subfolder_class: Type[T] | None = None) -> T:
+    def get_subfolder(self, name: str, subfolder_class: Type[T] | None = None) -> T | Folder:
         """Retrieve a subfolder.
 
         Note that this is convenience similar to a regular folder. To get a partition entry, use get_partition.
