@@ -8,6 +8,12 @@ from static_folders import Folder, FolderPartition
 from static_folders.partitioned_folder import EnumeratedFolderPartition
 
 
+@pytest.fixture
+def path_not_on_disk(tmp_path: Path) -> Path:
+    # get a path which pytest isn't mkdiring
+    return tmp_path / "new_dir_not_on_disk"
+
+
 def test_basic(tmp_path: Path) -> None:
     f = Folder(tmp_path)
     assert f.to_path() == tmp_path
@@ -109,13 +115,13 @@ class AsgsLayersByYear(FolderPartition[AsgsYearDir]):
     pass
 
 
-def test_partitioned_folder(tmp_path: Path) -> None:
-    root_dir = tmp_path / "new_dir_not_on_disk"
-
-    f = AsgsLayersByYear(root_dir, partition_class=AsgsYearDir)
-    y2016_dir = f.get_subfolder("2016")
+def test_partitioned_folder(path_not_on_disk: Path) -> None:
+    f = AsgsLayersByYear(path_not_on_disk, partition_class=AsgsYearDir)
+    y2016_dir_subfolder = f.get_subfolder("2016")
+    assert not isinstance(y2016_dir_subfolder, AsgsYearDir)
+    y2016_dir = f.get_partition("2016")
     assert isinstance(y2016_dir, AsgsYearDir)
-    assert y2016_dir.sa1 == root_dir / "2016" / "SA1.gpkg"
+    assert y2016_dir.sa1 == path_not_on_disk / "2016" / "SA1.gpkg"
 
     # check/ document IO behaviour
     assert not f.to_path().exists()
@@ -126,18 +132,18 @@ def test_partitioned_folder(tmp_path: Path) -> None:
     assert not y2016_dir.sa1.exists()
 
 
-def test_enumerated_partitioned_folder(tmp_path: Path) -> None:
+def test_enumerated_partitioned_folder(path_not_on_disk: Path) -> None:
     # repeat test with EnumeratedFolderPartition
 
     class EnumeratedAsgsLayersByYear(EnumeratedFolderPartition[AsgsYearDir]):
         partition_names = ("2016", "2021")
 
-    root_dir = tmp_path / "new_dir_not_on_disk"
-
-    f = EnumeratedAsgsLayersByYear(root_dir, partition_class=AsgsYearDir)
-    y2016_dir = f.get_subfolder("2016")
+    f = EnumeratedAsgsLayersByYear(path_not_on_disk, partition_class=AsgsYearDir)
+    y2016_dir_subfolder = f.get_subfolder("2016")
+    assert not isinstance(y2016_dir_subfolder, AsgsYearDir)
+    y2016_dir = f.get_partition("2016")
     assert isinstance(y2016_dir, AsgsYearDir)
-    assert y2016_dir.sa1 == root_dir / "2016" / "SA1.gpkg"
+    assert y2016_dir.sa1 == path_not_on_disk / "2016" / "SA1.gpkg"
 
     # check/ document IO behaviour
     assert not f.to_path().exists()
@@ -152,22 +158,23 @@ def test_enumerated_partitioned_folder(tmp_path: Path) -> None:
         f.get_partition("2023")
 
 
-def test_prefixed_enumerated_partitioned_folder(tmp_path: Path) -> None:
+def test_prefixed_enumerated_partitioned_folder(path_not_on_disk: Path) -> None:
     # repeat test with EnumeratedFolderPartition
 
     class EnumeratedAsgsLayersByYear(EnumeratedFolderPartition[AsgsYearDir]):
         partition_prefix = "year="
         partition_names = ("2016", "2021")
 
-    root_dir = tmp_path / "new_dir_not_on_disk"
-
-    f = EnumeratedAsgsLayersByYear(root_dir, partition_class=AsgsYearDir)
-    y2016_dir = f.get_subfolder("year=2016")
-    assert isinstance(y2016_dir, AsgsYearDir)
-    assert y2016_dir.sa1 == root_dir / "year=2016" / "SA1.gpkg"
-    y2016_dir2 = f.get_partition("2016")
+    f = EnumeratedAsgsLayersByYear(path_not_on_disk, partition_class=AsgsYearDir)
+    y2016_dir_subfolder = f.get_subfolder("year=2016")  # conforms but wrong method
+    assert not isinstance(y2016_dir_subfolder, AsgsYearDir)
+    y2016_dir = f.get_partition("year=2016")  # explicit prefix
+    assert y2016_dir.sa1 == path_not_on_disk / "year=2016" / "SA1.gpkg"
+    y2016_dir2 = f.get_partition("2016")  # implicit prefix
+    assert y2016_dir == y2016_dir2  # attrs equality implies equal
+    assert y2016_dir != y2016_dir_subfolder
     assert isinstance(y2016_dir2, AsgsYearDir)
-    assert y2016_dir2.sa1 == root_dir / "year=2016" / "SA1.gpkg"
+    assert y2016_dir2.sa1 == path_not_on_disk / "year=2016" / "SA1.gpkg"
 
     # check/ document IO behaviour
     assert not f.to_path().exists()
@@ -180,3 +187,15 @@ def test_prefixed_enumerated_partitioned_folder(tmp_path: Path) -> None:
     assert not f.get_subfolder("year=2023").to_path().exists()
     with pytest.raises(NameError):
         f.get_partition("year=2023")
+
+
+def test_enumerated_subfolder_logical(path_not_on_disk: Path) -> None:
+    class EnumeratedAsgsLayersByYear(EnumeratedFolderPartition[AsgsYearDir]):
+        partition_prefix = "year="
+        partition_names = ("2016", "2021")
+
+    f = EnumeratedAsgsLayersByYear(path_not_on_disk, partition_class=AsgsYearDir)
+
+    assert type(f.get_subfolder("foo")) == Folder  # Shouldn't be AsgsYearDir, doesn't conform # noqa: E721
+    assert type(f.get_subfolder("foo", subfolder_class=AsgsYearDir)) == AsgsYearDir  # noqa: E721
+    assert type(f.get_partition("2016")) == AsgsYearDir  # noqa: E721
