@@ -1106,8 +1106,8 @@ packages:
   timestamp: 1751135714659
 - pypi: .\
   name: static-folders
-  version: 0.1.3
-  sha256: cfede4497d4d6071182acaff7a9f3be4d8fa62a589fd509baf875716ef91165c
+  version: 0.2.0
+  sha256: 1db1b84539648aac264ad594fec0289af4e76e043300951cf7f37977020378fa
   requires_dist:
   - attrs>=24.2.0
   - typing-extensions>=4.7.1 ; python_full_version < '3.13'

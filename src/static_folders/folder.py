@@ -112,17 +112,27 @@ class Folder(FolderLike):
                     provided_path: Path = getattr(self, attrib_name)
                     if not isinstance(provided_path, Path):
                         msg = (
-                            f"Annotation for attribute {attrib_name} was Path, "
+                            f"Annotation for attribute {attrib_name!r} was Path, "
                             f"but provided attribute was {provided_path!r}"
                         )
                         raise TypeError(msg)
                     if provided_path.is_absolute():
                         msg = (
                             "Provided path instances must be relative paths, these are treated as "
-                            "paths relative to the location of the Folder stance."
+                            "paths relative to the location of the Folder stance. This was not true "
+                            f"for {attrib_name!r}"
                         )
                         raise TypeError(msg)
                     setattr(self, attrib_name, self.location / provided_path)
+                elif issubclass(annotation, str):
+                    msg = (
+                        "Folder subclasses do not support raw str annotated fields, "
+                        f"to avoid confusion between whether the str represents a Path or not. Got {attrib_name!r} "
+                        f"which is annotated as a string. If your intention is to provide a relative filepath, "
+                        f"provide a Path instead. If your intention is to declare a class variable string, "
+                        f"use the full ClassVar[str] annotation to convey this."
+                    )
+                    raise TypeError(msg)
 
     def to_path(self) -> Path:
         return self.location
