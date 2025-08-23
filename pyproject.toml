@@ -1,6 +1,6 @@
 [project]
 name = "static-folders"
-version = "0.2.0"
+version = "0.3.0"
 description = "Modelling Static folder structures for python applications"
 readme = "README.md"
 authors = [
