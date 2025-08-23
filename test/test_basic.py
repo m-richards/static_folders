@@ -1,6 +1,7 @@
 import os
 import re
 from pathlib import Path
+from typing import ClassVar
 
 import pytest
 from attrs import define
@@ -37,6 +38,30 @@ def test_missing_type_annotation(tmp_path: Path) -> None:
         match=re.escape("Folder subclasses do not support FolderLike or Path type fields without type annotations"),
     ):
         SubFolder(tmp_path)
+
+
+def test_str_annotation_fails(tmp_path: Path) -> None:
+    # Footgun on string annotations
+    @define
+    class SubFolder(Folder):
+        file: str = "file.txt"
+
+    with pytest.raises(
+        TypeError,
+        match=re.escape("Folder subclasses do not support raw str annotated fields, to avoid confusion"),
+    ):
+        SubFolder(tmp_path)
+
+
+def test_classvar_str_works(tmp_path: Path) -> None:
+    # Footgun on string annotations
+    @define
+    class SubFolder(Folder):
+        file: ClassVar[str] = "file.txt"
+
+    folder = SubFolder(tmp_path)
+    assert folder.file == "file.txt"
+    assert isinstance(folder.file, str)
 
 
 def test_create(tmp_path: Path) -> None:
@@ -199,3 +224,27 @@ def test_enumerated_subfolder_logical(path_not_on_disk: Path) -> None:
     assert type(f.get_subfolder("foo")) == Folder  # Shouldn't be AsgsYearDir, doesn't conform # noqa: E721
     assert type(f.get_subfolder("foo", subfolder_class=AsgsYearDir)) == AsgsYearDir  # noqa: E721
     assert type(f.get_partition("2016")) == AsgsYearDir  # noqa: E721
+
+
+def test_attrs_subclass_post_init(path_not_on_disk: Path) -> None:
+    # documenting that if we call super properly, this behaves properly.
+    # but you need to call super!
+    class Custom(Folder):
+        def __attrs_post_init__(self) -> None:
+            super().__attrs_post_init__()
+
+    a = Custom(path_not_on_disk)
+    a.get_subfolder("foo")
+
+
+@pytest.mark.xfail(reason="if a user customises post init badly there's not much we can do.")
+def test_attrs_subclass_post_init_missing(path_not_on_disk: Path) -> None:
+    # documenting that if we call super properly, this behaves properly.
+    # but you need to call super!
+    # If we had an api based around decorators, this wouldn't come up
+    class Custom(Folder):
+        def __attrs_post_init__(self) -> None:
+            pass
+
+    a = Custom(path_not_on_disk)
+    a.get_subfolder("foo")
