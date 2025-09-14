@@ -143,7 +143,7 @@ class AsgsLayersByYear(FolderPartition[AsgsYearDir]):
 
 
 def test_partitioned_folder(path_not_on_disk: Path) -> None:
-    f = AsgsLayersByYear(path_not_on_disk, partition_class=AsgsYearDir)
+    f = AsgsLayersByYear(path_not_on_disk)
     y2016_dir_subfolder = f.get_subfolder("2016")
     assert not isinstance(y2016_dir_subfolder, AsgsYearDir)
     y2016_dir = f.get_partition("2016")
@@ -165,7 +165,7 @@ def test_enumerated_partitioned_folder(path_not_on_disk: Path) -> None:
     class EnumeratedAsgsLayersByYear(EnumeratedFolderPartition[AsgsYearDir]):
         partition_names = ("2016", "2021")
 
-    f = EnumeratedAsgsLayersByYear(path_not_on_disk, partition_class=AsgsYearDir)
+    f = EnumeratedAsgsLayersByYear(path_not_on_disk)
     y2016_dir_subfolder = f.get_subfolder("2016")
     assert not isinstance(y2016_dir_subfolder, AsgsYearDir)
     y2016_dir = f.get_partition("2016")
@@ -192,7 +192,7 @@ def test_prefixed_enumerated_partitioned_folder(path_not_on_disk: Path) -> None:
         partition_prefix = "year="
         partition_names = ("2016", "2021")
 
-    f = EnumeratedAsgsLayersByYear(path_not_on_disk, partition_class=AsgsYearDir)
+    f = EnumeratedAsgsLayersByYear(path_not_on_disk)
     y2016_dir_subfolder = f.get_subfolder("year=2016")  # conforms but wrong method
     assert not isinstance(y2016_dir_subfolder, AsgsYearDir)
     y2016_dir = f.get_partition("year=2016")  # explicit prefix
@@ -221,7 +221,7 @@ def test_enumerated_subfolder_logical(path_not_on_disk: Path) -> None:
         partition_prefix = "year="
         partition_names = ("2016", "2021")
 
-    f = EnumeratedAsgsLayersByYear(path_not_on_disk, partition_class=AsgsYearDir)
+    f = EnumeratedAsgsLayersByYear(path_not_on_disk)
 
     assert type(f.get_subfolder("foo")) == Folder  # Shouldn't be AsgsYearDir, doesn't conform # noqa: E721
     assert type(f.get_subfolder("foo", subfolder_class=AsgsYearDir)) == AsgsYearDir  # noqa: E721
@@ -292,7 +292,7 @@ def test_eager_folder_default_errors(path_not_on_disk: Path) -> None:
 
 def test_eager_folder_default_errors_folder_partition(path_not_on_disk: Path) -> None:
     class Custom2(Folder):
-        a: FolderPartition = FolderPartition("foo", partition_class=Folder)
+        a: FolderPartition = FolderPartition[Folder]("foo")
 
     with pytest.raises(
         TypeError,
@@ -301,3 +301,12 @@ def test_eager_folder_default_errors_folder_partition(path_not_on_disk: Path) ->
         + re.escape(" is deprecated"),
     ):
         Custom2(path_not_on_disk)
+
+
+def test_folder_partition_generics_required(path_not_on_disk: Path) -> None:
+    with pytest.raises(
+        TypeError, match=re.escape("FolderPartition instance constructed without providing explicit generics")
+    ):
+
+        class _Custom2(Folder):
+            a: FolderPartition = FolderPartition("foo")
