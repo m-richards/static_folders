@@ -90,7 +90,11 @@ class Folder(FolderLike):
         "_raw_location",
         "_child_folders",
     ]
-    _child_folders: list[Folder] = field(init=False, default=Factory(list))
+    _child_folders: list[FolderLike] = field(init=False, default=Factory(list))
+
+    @classmethod
+    def from_path(cls, path: Path) -> Folder:
+        return cls(path)
 
     @classmethod
     def from_string(cls, path: str) -> Self:
@@ -163,7 +167,7 @@ class Folder(FolderLike):
                         pass  # subclasses or lambda come through this passage
                         # print("pre-existing thing", value)
                     if folder_name is not None:
-                        value = annotation(self.location / folder_name)
+                        value = annotation.from_path(self.location / folder_name)
                         setattr(self, attrib_name, value)
 
                         self._child_folders.append(value)

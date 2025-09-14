@@ -25,6 +25,10 @@ class FolderPartition(FolderLike[U]):
 
     partition_prefix: ClassVar[str] = ""
 
+    @classmethod
+    def from_path(cls, path: Path) -> FolderPartition:
+        return cls(path)
+
     def __attrs_post_init__(self) -> None:
         self.location = Path(os.fspath(self._raw_location))
 
