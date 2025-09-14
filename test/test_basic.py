@@ -6,8 +6,8 @@ from typing import ClassVar
 import pytest
 from attrs import define
 from static_folders import Folder, FolderPartition
-from static_folders.folder import FolderName
 from static_folders.partitioned_folder import EnumeratedFolderPartition
+import static_folders as sf
 
 
 @pytest.fixture
@@ -95,8 +95,9 @@ def test_nested(tmp_path: Path) -> None:
     class Photos(Folder):
         temp: Folder
         y2024: PhotoYearFolder
-        y2025: PhotoYearFolder = FolderName(Path("2025"))  # provide concrete which doesn't have y prefix
-        y2026: PhotoYearFolder = FolderName("2026")  # string arg is fine too (path variant now silly)
+        y2025: PhotoYearFolder = sf.custom_name(
+            "2025", annotation_type=PhotoYearFolder
+        )  # provide concrete which doesn't have y prefix
         readme: Path = Path("readme.md")
 
     photos = Photos(tmp_path)
@@ -108,9 +109,8 @@ def test_nested(tmp_path: Path) -> None:
     assert photos.y2024.index == tmp_path / "y2024" / "index.md"
     assert photos.y2025.index == tmp_path / "2025" / "index.md"
     assert photos.y2025.to_path() == tmp_path / "2025"
-    assert photos.y2026.index == tmp_path / "2026" / "index.md"
-    child_folder2 = photos.get_subfolder("2026", subfolder_class=PhotoYearFolder)
-    child_folder2a = photos.get_subfolder("2026", subfolder_class=Folder)
+    child_folder2 = photos.get_subfolder("2025", subfolder_class=PhotoYearFolder)
+    child_folder2a = photos.get_subfolder("2025", subfolder_class=Folder)
     assert isinstance(child_folder2, PhotoYearFolder)
     assert isinstance(child_folder2a, Folder) and not isinstance(child_folder2a, PhotoYearFolder)  # noqa: PT018
 
@@ -123,7 +123,7 @@ def test_exotic_attributes_okay(tmp_path: Path) -> None:
         class Nested(Folder):
             attrib = lambda x: print(x)  # noqa:E731
 
-        subfolder: A = FolderName("custom_name_not_subfolder")
+        subfolder: A = sf.custom_name("custom_name_not_subfolder", annotation_type=A)
 
         readme: Path = Path("readme.txt")
 
@@ -255,9 +255,21 @@ def test_attrs_subclass_post_init_missing(path_not_on_disk: Path) -> None:
 def test_custom_folder_names(path_not_on_disk: Path) -> None:
     class Custom(Folder):
         a: Folder
-        b: Folder = FolderName("02_b")
+        b: Folder = sf.custom_name("02_b", annotation_type=Folder)
+        c: AsgsYearDir = sf.custom_name("02_c", annotation_type=AsgsYearDir)
 
     folder = Custom(path_not_on_disk)
     assert isinstance(folder.a, Folder)
     assert folder.a.to_path() == path_not_on_disk / "a"
     assert folder.b.to_path() == path_not_on_disk / "02_b"
+
+
+def test_ambiguous_annotations_error_out(path_not_on_disk: Path) -> None:
+    class Custom(Folder):
+        a: Folder = Path("foo.txt")  # type:ignore[assignment]
+
+    with pytest.raises(
+        TypeError,
+        match=re.escape("Annotating an attribute with a Folder type and a Path value is ambiguous and not supported"),
+    ):
+        Custom(path_not_on_disk)

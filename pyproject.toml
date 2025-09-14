@@ -36,9 +36,14 @@ dev = [
 line-length = 120
 target-version = "py37"
 
+
+[tool.ruff.format]
+docstring-code-format = true
+
 [tool.ruff.lint]
 unfixable = []
 typing-modules = []
+
 
 select = [
   # pyflakes

@@ -5,7 +5,7 @@ import os
 import sys
 import typing
 from pathlib import Path, PureWindowsPath, PurePosixPath
-from typing import Sequence, Any, Callable, TypeVar, ClassVar, Type
+from typing import Sequence, Any, Callable, TypeVar, ClassVar, Type, overload
 
 from attrs import define, field, Factory
 from typing_extensions import Self
@@ -22,11 +22,29 @@ U = TypeVar("U", bound="Folder")
 PathLike = typing.Union[str, Path]
 T = TypeVar("T", bound="Folder")
 
-BasePurePath = PureWindowsPath if os.name == "nt" else PurePosixPath
+V = TypeVar("V")
+
+if sys.platform == "win32":
+
+    class _FolderName(PureWindowsPath):
+        """TODO this subclassing might be a bad idea"""
+else:
+
+    class FolderName(PurePosixPath):
+        """TODO this subclassing might be a bad idea"""
 
 
-class FolderName(BasePurePath):
-    """TODO this subclassing might be a bad idea"""
+@overload
+def custom_name(name: str, annotation_type: None = ...) -> Folder: ...
+
+
+@overload
+def custom_name(name: str, annotation_type: Type[U] = ...) -> U: ...
+
+
+def custom_name(name: str, annotation_type: Type[U] | None = None) -> U | Folder:
+    # We are lying to the type system here, and assuming users don't use this
+    return _FolderName(name)  # type:ignore[return-value]
 
 
 # def name(value):
@@ -115,9 +133,10 @@ class Folder(FolderLike):
             if isinstance(annotation, type):
                 if issubclass(annotation, Folder):  # i.e. attribute foo: Folder - a class constructor
                     value = getattr(self, attrib_name, None)
+                    folder_name = None
                     if value is None:  # check default wasn't given
                         folder_name = attrib_name
-                    elif isinstance(value, FolderName):
+                    elif isinstance(value, _FolderName):
                         folder_name = value.name
                     elif isinstance(value, Folder):
                         msg = (
@@ -128,14 +147,26 @@ class Folder(FolderLike):
                             f"migrate to {attrib_name}: {annotation} = FolderName(...) "
                         )
                         raise TypeError(msg)
+                    elif isinstance(value, Path):
+                        # TODO, if we're doing all this at runtime, do we get it at type checking time?
+                        # and if not, does that defeat the purpose of this being staticly typed.
+                        msg = (
+                            f"Annotating an attribute with a Folder type and a Path value is ambiguous "
+                            f"and not supported (got {attrib_name}: {annotation} = {value}). "
+                            f"If you intended to declare a subfolder with a custom folder name, "
+                            f"you should update the Path value to a FolderName value instead.\n"
+                            f"If you intended to declare a file within the folder, you should update the "
+                            f"Folder annotation to be a Path instead."
+                        )
+                        raise TypeError(msg)
                     else:
                         pass  # subclasses or lambda come through this passage
                         # print("pre-existing thing", value)
+                    if folder_name is not None:
+                        value = annotation(self.location / folder_name)
+                        setattr(self, attrib_name, value)
 
-                    value = annotation(self.location / folder_name)
-                    setattr(self, attrib_name, value)
-
-                    self._child_folders.append(value)
+                        self._child_folders.append(value)
                     # else: # extract path from given default
                     #     setattr(self, attrib_name, annotation(self.location / os.fspath(value)))
 
