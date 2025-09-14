@@ -4,7 +4,7 @@ import inspect
 import os
 import sys
 import typing
-from pathlib import Path
+from pathlib import Path, PureWindowsPath, PurePosixPath
 from typing import Sequence, Any, Callable, TypeVar, ClassVar, Type
 
 from attrs import define, field, Factory
@@ -21,6 +21,20 @@ U = TypeVar("U", bound="Folder")
 
 PathLike = typing.Union[str, Path]
 T = TypeVar("T", bound="Folder")
+
+BasePurePath = PureWindowsPath if os.name == "nt" else PurePosixPath
+
+
+class FolderName(BasePurePath):
+    """TODO this subclassing might be a bad idea"""
+
+
+# def name(value):
+#     """First draft value to distinguish folder directory overrides.
+#
+#     # TODO should we just have FolderName / FileName classes for consistency?
+#     """
+#     return CustomFolderName(value)
 
 
 def _get_annotations(obj: Callable[..., object] | type[Any] | ModuleType) -> dict[str, object]:
@@ -68,7 +82,7 @@ class Folder(FolderLike):
     def __fspath__(self) -> str:
         return str(self.location)
 
-    def __attrs_post_init__(self) -> None:
+    def __attrs_post_init__(self) -> None:  # noqa: PLR0912
         self.location = Path(os.fspath(self._raw_location))
         cls = type(self)
         # custom support for annotations which are sub-types of Folder, or Path
@@ -102,8 +116,25 @@ class Folder(FolderLike):
                 if issubclass(annotation, Folder):  # i.e. attribute foo: Folder - a class constructor
                     value = getattr(self, attrib_name, None)
                     if value is None:  # check default wasn't given
-                        value = annotation(self.location / attrib_name)
-                        setattr(self, attrib_name, value)
+                        folder_name = attrib_name
+                    elif isinstance(value, FolderName):
+                        folder_name = value.name
+                    elif isinstance(value, Folder):
+                        msg = (
+                            f"Providing a folder annotation with a folder value "
+                            f"({attrib_name}: {annotation} = {value}) is deprecated, "
+                            "behaviour was not sound with respect to child file paths. If the intention"
+                            "was to specify a custom folder name, you should "
+                            f"migrate to {attrib_name}: {annotation} = FolderName(...) "
+                        )
+                        raise TypeError(msg)
+                    else:
+                        pass  # subclasses or lambda come through this passage
+                        # print("pre-existing thing", value)
+
+                    value = annotation(self.location / folder_name)
+                    setattr(self, attrib_name, value)
+
                     self._child_folders.append(value)
                     # else: # extract path from given default
                     #     setattr(self, attrib_name, annotation(self.location / os.fspath(value)))

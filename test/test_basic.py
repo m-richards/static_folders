@@ -6,6 +6,7 @@ from typing import ClassVar
 import pytest
 from attrs import define
 from static_folders import Folder, FolderPartition
+from static_folders.folder import FolderName
 from static_folders.partitioned_folder import EnumeratedFolderPartition
 
 
@@ -86,7 +87,7 @@ def test_create(tmp_path: Path) -> None:
 
 
 def test_nested(tmp_path: Path) -> None:
-    tmp_path = Path(".")
+    tmp_path = Path("test")  # needs to not be "." or there's a soundness issue around deferred
 
     class PhotoYearFolder(Folder):
         index: Path = Path("index.md")
@@ -94,8 +95,8 @@ def test_nested(tmp_path: Path) -> None:
     class Photos(Folder):
         temp: Folder
         y2024: PhotoYearFolder
-        y2025: PhotoYearFolder = PhotoYearFolder(Path("2025"))  # provide concrete which doesn't have y prefix
-        y2026: PhotoYearFolder = PhotoYearFolder("2026")  # string arg is fine too
+        y2025: PhotoYearFolder = FolderName(Path("2025"))  # provide concrete which doesn't have y prefix
+        y2026: PhotoYearFolder = FolderName("2026")  # string arg is fine too (path variant now silly)
         readme: Path = Path("readme.md")
 
     photos = Photos(tmp_path)
@@ -106,6 +107,7 @@ def test_nested(tmp_path: Path) -> None:
     assert photos.readme == tmp_path / "readme.md"
     assert photos.y2024.index == tmp_path / "y2024" / "index.md"
     assert photos.y2025.index == tmp_path / "2025" / "index.md"
+    assert photos.y2025.to_path() == tmp_path / "2025"
     assert photos.y2026.index == tmp_path / "2026" / "index.md"
     child_folder2 = photos.get_subfolder("2026", subfolder_class=PhotoYearFolder)
     child_folder2a = photos.get_subfolder("2026", subfolder_class=Folder)
@@ -121,7 +123,7 @@ def test_exotic_attributes_okay(tmp_path: Path) -> None:
         class Nested(Folder):
             attrib = lambda x: print(x)  # noqa:E731
 
-        subfolder: A = A("custom_name_not_subfolder")
+        subfolder: A = FolderName("custom_name_not_subfolder")
 
         readme: Path = Path("readme.txt")
 
@@ -248,3 +250,14 @@ def test_attrs_subclass_post_init_missing(path_not_on_disk: Path) -> None:
 
     a = Custom(path_not_on_disk)
     a.get_subfolder("foo")
+
+
+def test_custom_folder_names(path_not_on_disk: Path) -> None:
+    class Custom(Folder):
+        a: Folder
+        b: Folder = FolderName("02_b")
+
+    folder = Custom(path_not_on_disk)
+    assert isinstance(folder.a, Folder)
+    assert folder.a.to_path() == path_not_on_disk / "a"
+    assert folder.b.to_path() == path_not_on_disk / "02_b"
