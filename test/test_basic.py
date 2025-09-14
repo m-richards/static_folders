@@ -270,6 +270,27 @@ def test_ambiguous_annotations_error_out(path_not_on_disk: Path) -> None:
 
     with pytest.raises(
         TypeError,
-        match=re.escape("Annotating an attribute with a Folder type and a Path value is ambiguous and not supported"),
+        match=re.escape("Annotating an attribute with a FolderLike type and a Path value is ambiguous and not supported"),
     ):
         Custom(path_not_on_disk)
+
+
+def test_eager_folder_default_errors(path_not_on_disk: Path) -> None:
+    class Custom(Folder):
+        a: Folder = Folder("foo")
+
+    with pytest.raises(
+        TypeError,
+        match=re.escape("Providing a FolderLike annotation with a FolderLike value ") + ".*" + re.escape(" is deprecated"),
+    ):
+        Custom(path_not_on_disk)
+
+def test_eager_folder_default_errors_folder_partition(path_not_on_disk: Path) -> None:
+    class Custom2(Folder):
+        a: FolderPartition = FolderPartition("foo", partition_class=Folder)
+
+    with pytest.raises(
+        TypeError,
+        match=re.escape("Providing a FolderLike annotation with a FolderLike value ") + ".*" + re.escape(" is deprecated"),
+    ):
+        Custom2(path_not_on_disk)

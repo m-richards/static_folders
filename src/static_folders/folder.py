@@ -131,32 +131,32 @@ class Folder(FolderLike):
             if attrib_name in self._reserved_attributes:
                 continue
             if isinstance(annotation, type):
-                if issubclass(annotation, Folder):  # i.e. attribute foo: Folder - a class constructor
+                if issubclass(annotation, FolderLike):  # i.e. attribute foo: Folder - a class constructor
                     value = getattr(self, attrib_name, None)
                     folder_name = None
                     if value is None:  # check default wasn't given
                         folder_name = attrib_name
                     elif isinstance(value, _FolderName):
                         folder_name = value.name
-                    elif isinstance(value, Folder):
+                    elif isinstance(value, FolderLike):
                         msg = (
-                            f"Providing a folder annotation with a folder value "
+                            f"Providing a FolderLike annotation with a FolderLike value "
                             f"({attrib_name}: {annotation} = {value}) is deprecated, "
-                            "behaviour was not sound with respect to child file paths. If the intention"
+                            "behaviour was not sound with respect to child file paths. If the intention "
                             "was to specify a custom folder name, you should "
-                            f"migrate to {attrib_name}: {annotation} = FolderName(...) "
+                            f"migrate to {attrib_name}: {annotation} = sf.custom_name(...) "
                         )
                         raise TypeError(msg)
                     elif isinstance(value, Path):
                         # TODO, if we're doing all this at runtime, do we get it at type checking time?
                         # and if not, does that defeat the purpose of this being staticly typed.
                         msg = (
-                            f"Annotating an attribute with a Folder type and a Path value is ambiguous "
+                            f"Annotating an attribute with a FolderLike type and a Path value is ambiguous "
                             f"and not supported (got {attrib_name}: {annotation} = {value}). "
                             f"If you intended to declare a subfolder with a custom folder name, "
-                            f"you should update the Path value to a FolderName value instead.\n"
+                            f"you should update the Path value to a sf.custom_name(...) value instead.\n"
                             f"If you intended to declare a file within the folder, you should update the "
-                            f"Folder annotation to be a Path instead."
+                            f"FolderLike annotation to be a Path instead."
                         )
                         raise TypeError(msg)
                     else:
