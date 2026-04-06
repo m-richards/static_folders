@@ -192,8 +192,9 @@ class Folder(FolderLike):
                     setattr(self, attrib_name, self.location / provided_path)
                 elif issubclass(annotation, str):
                     msg = (
-                        "Folder subclasses do not support raw str annotated fields, "
-                        f"to avoid confusion between whether the str represents a Path or not. Got {attrib_name!r} "
+                        "Folder subclasses do not support raw str annotated fields "
+                        f"to avoid ambiguity between whether the str represents a filepath or not. "
+                        f"Class {self.__class__} has attribute {attrib_name!r} "
                         f"which is annotated as a string. If your intention is to provide a relative filepath, "
                         f"provide a Path instead. If your intention is to declare a class variable string, "
                         f"use the full ClassVar[str] annotation to convey this."

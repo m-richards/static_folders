@@ -49,7 +49,7 @@ def test_str_annotation_fails(tmp_path: Path) -> None:
 
     with pytest.raises(
         TypeError,
-        match=re.escape("Folder subclasses do not support raw str annotated fields, to avoid confusion"),
+        match=re.escape("Folder subclasses do not support raw str annotated fields"),
     ):
         SubFolder(tmp_path)
 
