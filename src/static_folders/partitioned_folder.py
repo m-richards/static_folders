@@ -72,7 +72,7 @@ class FolderPartition(FolderLike[U]):
         """
         if isinstance(item, TypeVar):
             # This is called at class definition time where item is a Generic, don't do anything crazy
-            # (this is equivalent to could be super().__class_getitem__(item))
+            # (this is equivalent to super().__class_getitem__(item))
             return cls
         # Otherwise we specialise PartitionedFolder[Kind]
         # and make a new subclass of PartitionedFolder, which we call PartitionedFolder[Kind_static_folders_dynamic]

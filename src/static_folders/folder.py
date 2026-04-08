@@ -43,16 +43,10 @@ def custom_name(name: str, annotation_type: Type[U] = ...) -> U: ...
 
 
 def custom_name(name: str, annotation_type: Type[U] | None = None) -> U | Folder:
-    # We are lying to the type system here, and assuming users don't use this
+    # We are lying to the type system here, and assuming users don't use this in a context where they could
+    # see the return value. We only use the distinct type here as a marker to tell folders from files
+    # TODO should this be implemented via Annotated[str, "custom_folder_name"] instead?
     return _FolderName(name)  # type:ignore[return-value]
-
-
-# def name(value):
-#     """First draft value to distinguish folder directory overrides.
-#
-#     # TODO should we just have FolderName / FileName classes for consistency?
-#     """
-#     return CustomFolderName(value)
 
 
 def _get_annotations(obj: Callable[..., object] | type[Any] | ModuleType) -> dict[str, object]:

@@ -1,4 +1,4 @@
-[project]
+[workspace]
 authors = ["Matt Richards <mrichards7@outlook.com.au>"]
 channels = ["conda-forge"]
 description = "Modelling Static folder structures for python applications"

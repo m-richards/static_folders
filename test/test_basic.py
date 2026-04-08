@@ -95,9 +95,8 @@ def test_nested(tmp_path: Path) -> None:
     class Photos(Folder):
         temp: Folder
         y2024: PhotoYearFolder
-        y2025: PhotoYearFolder = sf.custom_name(
-            "2025", annotation_type=PhotoYearFolder
-        )  # provide concrete which doesn't have y prefix
+        # provide concrete path which doesn't have y prefix
+        y2025: PhotoYearFolder = sf.custom_name("2025", annotation_type=PhotoYearFolder)
         readme: Path = Path("readme.md")
 
     photos = Photos(tmp_path)
@@ -310,3 +309,7 @@ def test_folder_partition_generics_required(path_not_on_disk: Path) -> None:
 
         class _Custom2(Folder):
             a: FolderPartition = FolderPartition("foo")
+
+    # case which is permitted
+    class _Custom3(Folder):
+        a: FolderPartition = FolderPartition[Folder]("foo")
