@@ -7,8 +7,8 @@ platforms = ["win-64", "linux-64"]
 version = "0.1.0"
 
 [tasks]
-format = "uvx ruff format"
-lint = "uvx ruff check"
+format = "uvx ruff@latest format"
+lint = "uvx ruff@latest check"
 type_check = "uvx --with . --with attrs --with pytest mypy ."
 # SyntaxError: Non-UTF-8 code starting with '\xe8' in Scripts\mypy.exe
 #type_check_min = "uvx --python 3.7 --with . --with attrs mypy python -m mypy ."

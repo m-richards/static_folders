@@ -127,11 +127,11 @@ def test_nested(tmp_path: Path, custom_name_func: bool) -> None:
 
 def test_exotic_attributes_okay(tmp_path: Path) -> None:
     class A(Folder):
-        attrib = lambda x: print(x)  # noqa:E731
+        attrib = lambda x: print(x)  # noqa:E731, PLW0108
 
     class B(Folder):
         class Nested(Folder):
-            attrib = lambda x: print(x)  # noqa:E731
+            attrib = lambda x: print(x)  # noqa:E731, PLW0108
 
         subfolder: A = A("custom_nameed_subfolder")
 
