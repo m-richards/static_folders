@@ -5,9 +5,8 @@ from typing import ClassVar
 
 import pytest
 from attrs import define
+
 from static_folders import Folder, FolderPartition
-from static_folders.partitioned_folder import EnumeratedFolderPartition
-import static_folders as sf
 
 
 @pytest.fixture
@@ -45,11 +44,12 @@ def test_str_annotation_fails(tmp_path: Path) -> None:
     # Footgun on string annotations
     @define
     class SubFolder(Folder):
+        # don't permit storing strings as attributes, should be Path for files, or FolderLike for folders
         file: str = "file.txt"
 
     with pytest.raises(
         TypeError,
-        match=re.escape("Folder subclasses do not support raw str annotated fields"),
+        match=re.escape("Folder subclasses do not support raw str annotated fields to avoid ambiguity"),
     ):
         SubFolder(tmp_path)
 
@@ -87,7 +87,7 @@ def test_create(tmp_path: Path) -> None:
 
 
 def test_nested(tmp_path: Path) -> None:
-    tmp_path = Path("test")  # needs to not be "." or there's a soundness issue around deferred
+    # tmp_path cannot be ".", what would that mean when paths are resolved?
 
     class PhotoYearFolder(Folder):
         index: Path = Path("index.md")
@@ -95,9 +95,8 @@ def test_nested(tmp_path: Path) -> None:
     class Photos(Folder):
         temp: Folder
         y2024: PhotoYearFolder
-        y2025: PhotoYearFolder = sf.custom_name(
-            "2025", annotation_type=PhotoYearFolder
-        )  # provide concrete which doesn't have y prefix
+        # provide concrete path which doesn't have y prefix
+        y2025: PhotoYearFolder = PhotoYearFolder("2025")
         readme: Path = Path("readme.md")
 
     photos = Photos(tmp_path)
@@ -117,13 +116,13 @@ def test_nested(tmp_path: Path) -> None:
 
 def test_exotic_attributes_okay(tmp_path: Path) -> None:
     class A(Folder):
-        attrib = lambda x: print(x)  # noqa:E731
+        attrib = lambda x: print(x)  # noqa:E731, PLW0108
 
     class B(Folder):
         class Nested(Folder):
-            attrib = lambda x: print(x)  # noqa:E731
+            attrib = lambda x: print(x)  # noqa:E731, PLW0108
 
-        subfolder: A = sf.custom_name("custom_name_not_subfolder", annotation_type=A)
+        subfolder: A = A("custom_named_subfolder")
 
         readme: Path = Path("readme.txt")
 
@@ -136,96 +135,6 @@ class AsgsYearDir(Folder):
 
     sa1: Path = Path("SA1.gpkg")
     sa2: Path = Path("SA2.gpkg")
-
-
-class AsgsLayersByYear(FolderPartition[AsgsYearDir]):
-    pass
-
-
-def test_partitioned_folder(path_not_on_disk: Path) -> None:
-    f = AsgsLayersByYear(path_not_on_disk)
-    y2016_dir_subfolder = f.get_subfolder("2016")
-    assert not isinstance(y2016_dir_subfolder, AsgsYearDir)
-    y2016_dir = f.get_partition("2016")
-    assert isinstance(y2016_dir, AsgsYearDir)
-    assert y2016_dir.sa1 == path_not_on_disk / "2016" / "SA1.gpkg"
-
-    # check/ document IO behaviour
-    assert not f.to_path().exists()
-    assert not y2016_dir.sa1.exists()
-    f.create()
-    assert f.to_path().is_dir()
-    # child under partition can't be materialised
-    assert not y2016_dir.sa1.exists()
-
-
-def test_enumerated_partitioned_folder(path_not_on_disk: Path) -> None:
-    # repeat test with EnumeratedFolderPartition
-
-    class EnumeratedAsgsLayersByYear(EnumeratedFolderPartition[AsgsYearDir]):
-        partition_names = ("2016", "2021")
-
-    f = EnumeratedAsgsLayersByYear(path_not_on_disk)
-    y2016_dir_subfolder = f.get_subfolder("2016")
-    assert not isinstance(y2016_dir_subfolder, AsgsYearDir)
-    y2016_dir = f.get_partition("2016")
-    assert isinstance(y2016_dir, AsgsYearDir)
-    assert y2016_dir.sa1 == path_not_on_disk / "2016" / "SA1.gpkg"
-
-    # check/ document IO behaviour
-    assert not f.to_path().exists()
-    assert not y2016_dir.sa1.exists()
-    f.create()
-    assert f.to_path().is_dir()
-    # listed child under partition can be materialised
-    assert y2016_dir.to_path().is_dir()
-    assert f.get_subfolder("2021").to_path().exists()
-    assert not f.get_subfolder("2023").to_path().exists()
-    with pytest.raises(NameError):
-        f.get_partition("2023")
-
-
-def test_prefixed_enumerated_partitioned_folder(path_not_on_disk: Path) -> None:
-    # repeat test with EnumeratedFolderPartition
-
-    class EnumeratedAsgsLayersByYear(EnumeratedFolderPartition[AsgsYearDir]):
-        partition_prefix = "year="
-        partition_names = ("2016", "2021")
-
-    f = EnumeratedAsgsLayersByYear(path_not_on_disk)
-    y2016_dir_subfolder = f.get_subfolder("year=2016")  # conforms but wrong method
-    assert not isinstance(y2016_dir_subfolder, AsgsYearDir)
-    y2016_dir = f.get_partition("year=2016")  # explicit prefix
-    assert y2016_dir.sa1 == path_not_on_disk / "year=2016" / "SA1.gpkg"
-    y2016_dir2 = f.get_partition("2016")  # implicit prefix
-    assert y2016_dir == y2016_dir2  # attrs equality implies equal
-    assert y2016_dir != y2016_dir_subfolder
-    assert isinstance(y2016_dir2, AsgsYearDir)
-    assert y2016_dir2.sa1 == path_not_on_disk / "year=2016" / "SA1.gpkg"
-
-    # check/ document IO behaviour
-    assert not f.to_path().exists()
-    assert not y2016_dir.sa1.exists()
-    f.create()
-    assert f.to_path().is_dir()
-    # listed child under partition can be materialised
-    assert y2016_dir.to_path().is_dir()
-    assert f.get_subfolder("year=2021").to_path().exists()
-    assert not f.get_subfolder("year=2023").to_path().exists()
-    with pytest.raises(NameError):
-        f.get_partition("year=2023")
-
-
-def test_enumerated_subfolder_logical(path_not_on_disk: Path) -> None:
-    class EnumeratedAsgsLayersByYear(EnumeratedFolderPartition[AsgsYearDir]):
-        partition_prefix = "year="
-        partition_names = ("2016", "2021")
-
-    f = EnumeratedAsgsLayersByYear(path_not_on_disk)
-
-    assert type(f.get_subfolder("foo")) == Folder  # Shouldn't be AsgsYearDir, doesn't conform # noqa: E721
-    assert type(f.get_subfolder("foo", subfolder_class=AsgsYearDir)) == AsgsYearDir  # noqa: E721
-    assert type(f.get_partition("2016")) == AsgsYearDir  # noqa: E721
 
 
 def test_attrs_subclass_post_init(path_not_on_disk: Path) -> None:
@@ -243,25 +152,35 @@ def test_attrs_subclass_post_init(path_not_on_disk: Path) -> None:
 def test_attrs_subclass_post_init_missing(path_not_on_disk: Path) -> None:
     # documenting that if we call super properly, this behaves properly.
     # but you need to call super!
+    class CustomWorking(Folder):
+        def __attrs_post_init__(self) -> None:
+            super().__attrs_post_init__()
+
+    a = CustomWorking(path_not_on_disk)
+    assert a.get_subfolder("foo") == path_not_on_disk / "foo"
+
     # If we had an api based around decorators, this wouldn't come up
     class Custom(Folder):
         def __attrs_post_init__(self) -> None:
             pass
 
-    a = Custom(path_not_on_disk)
-    a.get_subfolder("foo")
+    b = Custom(path_not_on_disk)
+    b.get_subfolder("foo")
 
 
 def test_custom_folder_names(path_not_on_disk: Path) -> None:
+    # https://github.com/m-richards/static_folders/issues/11
     class Custom(Folder):
         a: Folder
-        b: Folder = sf.custom_name("02_b", annotation_type=Folder)
-        c: AsgsYearDir = sf.custom_name("02_c", annotation_type=AsgsYearDir)
+        b: Folder = Folder("02_b")
+        c: AsgsYearDir = AsgsYearDir("02_c")
 
     folder = Custom(path_not_on_disk)
     assert isinstance(folder.a, Folder)
     assert folder.a.to_path() == path_not_on_disk / "a"
+    # this needs to be under path_not_on_disk, not a relative path to cwd
     assert folder.b.to_path() == path_not_on_disk / "02_b"
+    assert folder.c.sa1 == path_not_on_disk / "02_c" / "SA1.gpkg"
 
 
 def test_ambiguous_annotations_error_out(path_not_on_disk: Path) -> None:
@@ -270,37 +189,9 @@ def test_ambiguous_annotations_error_out(path_not_on_disk: Path) -> None:
 
     with pytest.raises(
         TypeError,
-        match=re.escape(
-            "Annotating an attribute with a FolderLike type and a Path value is ambiguous and not supported"
-        ),
+        match=re.escape("Annotating an attribute with a FolderLike type and a Path value is incorrect"),
     ):
         Custom(path_not_on_disk)
-
-
-def test_eager_folder_default_errors(path_not_on_disk: Path) -> None:
-    class Custom(Folder):
-        a: Folder = Folder("foo")
-
-    with pytest.raises(
-        TypeError,
-        match=re.escape("Providing a FolderLike annotation with a FolderLike value ")
-        + ".*"
-        + re.escape(" is deprecated"),
-    ):
-        Custom(path_not_on_disk)
-
-
-def test_eager_folder_default_errors_folder_partition(path_not_on_disk: Path) -> None:
-    class Custom2(Folder):
-        a: FolderPartition = FolderPartition[Folder]("foo")
-
-    with pytest.raises(
-        TypeError,
-        match=re.escape("Providing a FolderLike annotation with a FolderLike value ")
-        + ".*"
-        + re.escape(" is deprecated"),
-    ):
-        Custom2(path_not_on_disk)
 
 
 def test_folder_partition_generics_required(path_not_on_disk: Path) -> None:
@@ -310,3 +201,30 @@ def test_folder_partition_generics_required(path_not_on_disk: Path) -> None:
 
         class _Custom2(Folder):
             a: FolderPartition = FolderPartition("foo")
+
+    with pytest.raises(
+        TypeError, match=re.escape("FolderPartition instance constructed without providing explicit generics")
+    ):
+
+        class _Custom3(Folder):
+            a: FolderPartition[AsgsYearDir] = FolderPartition("foo")
+
+    class _Custom4(Folder):
+        a: FolderPartition = FolderPartition[AsgsYearDir]("foo")
+
+    with pytest.raises(TypeError, match=re.escape("Building Class _Custom4 failed on constructing attribute")):
+        # TODO this case fails at instantiation time, not class initialisation, that's annoying
+        _Custom4(path_not_on_disk)
+
+    # case which is permitted
+    class _Custom5(AsgsYearDir):
+        a: FolderPartition[AsgsYearDir]
+
+    test = _Custom5(path_not_on_disk)
+    assert test.a.get_partition("baz").sa1 == path_not_on_disk / "a" / "baz" / "SA1.gpkg"
+
+    class _Custom6(AsgsYearDir):
+        a: FolderPartition[AsgsYearDir] = FolderPartition[AsgsYearDir]("foo")
+
+    test2 = _Custom6(path_not_on_disk)
+    assert test2.a.get_partition("baz").sa1 == path_not_on_disk / "foo" / "baz" / "SA1.gpkg"

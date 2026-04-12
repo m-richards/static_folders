@@ -1,9 +1,10 @@
 from __future__ import annotations
-from abc import ABC, abstractmethod
 
 import typing
+from abc import ABC, abstractmethod
+from typing import Generic, TypeVar
 
-from typing_extensions import Type, TypeVar, Generic
+from typing_extensions import Type
 
 if typing.TYPE_CHECKING:
     from pathlib import Path
@@ -14,9 +15,7 @@ T = TypeVar("T")
 class FolderLike(ABC, Generic[T]):
     location: Path
 
-    # LSP doesn't realist that attrs implements this
-    # @abstractmethod
-    # def __init__(self, location: Path) -> None: ...
+    # LSP doesn't seem to detect attrs implementing the protocol, so converted to an ABC
     @classmethod
     @abstractmethod
     def from_path(cls, path: Path) -> FolderLike[T]:

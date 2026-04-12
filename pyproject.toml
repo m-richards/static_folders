@@ -46,6 +46,8 @@ typing-modules = []
 
 
 select = [
+    # isort
+    "I",
   # pyflakes
   "F",
   # pycodestyle
@@ -198,5 +200,6 @@ ignore = [
 "test/*" = [
   "S101", # assert is fine with pytest tests
   "INP001", # tests aren't proper packages to be imported, okay to ignore
+   "FBT001", # bool positionals are needed for bool fixtures
 ]
 

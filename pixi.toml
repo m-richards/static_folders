@@ -1,4 +1,4 @@
-[project]
+[workspace]
 authors = ["Matt Richards <mrichards7@outlook.com.au>"]
 channels = ["conda-forge"]
 description = "Modelling Static folder structures for python applications"
@@ -7,15 +7,16 @@ platforms = ["win-64", "linux-64"]
 version = "0.1.0"
 
 [tasks]
-format = "uvx ruff format"
-lint = "uvx ruff check"
+format = "uvx ruff@latest format"
+lint = "uvx ruff@latest check"
+ruff-fix = "uvx ruff@latest check --fix"
 type_check = "uvx --with . --with attrs --with pytest mypy ."
 # SyntaxError: Non-UTF-8 code starting with '\xe8' in Scripts\mypy.exe
 #type_check_min = "uvx --python 3.7 --with . --with attrs mypy python -m mypy ."
-# TODO do with depends-on
-check_all = [{ task = "format" }, { task = "lint" }, { task = "type_check" }]
-ci_all_checks = {cmd = "pixi run format; pixi run lint; pixi run type_check"}
-#ci_tests = {cmd = "pixi run format; pixi run lint; pixi run type_check"}
+check-all = [{ task = "format" }, { task = "lint" }, { task = "type_check" }, { task = "type_check_min" }]
+check_all = [{ task = "check-all" }]
+fix = [{ task = "ruff-fix" }]
+
 
 
 
@@ -31,7 +32,10 @@ typing-extensions = "==4.7.1"
 
 [feature.py37.tasks]
 test = "pytest -rP ."
-type_check_min = "mypy ."
+# specific incantation to get this to work - uv variant works
+type_check_min = "uv run --no-project --python 3.7 --with 'typing-extensions==4.7.1' --with attrs --with mypy --with . python -m mypy ."
+# just doesn't work, unclear why
+#type_check_min_pixi = "python -m mypy ."
 
 [feature.py313.dependencies]
 python = "3.13.*"
