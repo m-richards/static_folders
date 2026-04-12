@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import typing
+from abc import ABC, abstractmethod
+from typing import Generic, TypeVar
 
-from typing_extensions import Protocol, Type, TypeVar, runtime_checkable
+from typing_extensions import Type
 
 if typing.TYPE_CHECKING:
     from pathlib import Path
@@ -10,10 +12,16 @@ if typing.TYPE_CHECKING:
 T = TypeVar("T")
 
 
-@runtime_checkable
-class FolderLike(Protocol[T]):
+class FolderLike(ABC, Generic[T]):
     location: Path
 
+    # LSP doesn't seem to detect attrs implementing the protocol, so converted to an ABC
+    @classmethod
+    @abstractmethod
+    def from_path(cls, path: Path) -> FolderLike[T]:
+        pass
+
+    @abstractmethod
     def __fspath__(self) -> str: ...
 
     def to_path(self) -> Path:
@@ -26,11 +34,13 @@ class FolderLike(Protocol[T]):
         # since this should be the behaviour in all sane cases
         return self.location / name
 
+    @abstractmethod
     def get_subfolder(self, name: str, subfolder_class: Type[T] = ...) -> T:
         # TODO is this a bad idea? we will have other @overloads of this method
         #  but should expect this override should always work?
         ...
 
+    @abstractmethod
     def create(self, *, mode: int = 0o777, parents: bool = True, exist_ok: bool = True) -> None:
         """Materialise folder representation to directories on disk.
         Subclass may opt to populate child folders eagerly.

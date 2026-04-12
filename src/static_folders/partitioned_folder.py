@@ -5,7 +5,7 @@ import typing
 from pathlib import Path
 
 from attrs import define, field
-from typing_extensions import TypeVar, ClassVar, Type
+from typing_extensions import ClassVar, Self, Type, TypeVar
 
 from static_folders import Folder
 from static_folders.folder_interface import FolderLike
@@ -16,17 +16,76 @@ if typing.TYPE_CHECKING:
 T = TypeVar("T", bound=Folder)
 U = TypeVar("U", bound=Folder)
 
+# module level, top of partitioned_folder.py
+_class_getitem_cache: dict[tuple[type, type], type] = {}
+
 
 @define(slots=False)
 class FolderPartition(FolderLike[U]):
     _raw_location: os.PathLike | str
-    partition_class: Type[U] = field(kw_only=True)
+    partition_class: type[U] = field(init=False, repr=False)
     location: Path = field(init=False)
 
     partition_prefix: ClassVar[str] = ""
 
+    @classmethod
+    def from_path(cls, path: Path) -> FolderPartition:
+        return cls(path)
+
     def __attrs_post_init__(self) -> None:
         self.location = Path(os.fspath(self._raw_location))
+        # runtime safety check
+        if getattr(type(self), "_type_param", None) is None:
+            # TODO should this be a warning instead? we're crashing on what's usually valid python
+            # TODO wish we could do this in a static analysis safe way. But the crash happens at
+            #  class definition time (unless you're using a FolderPartition as solely a toplevel thing),
+            #  not instantiation time which for now seems safe enough
+            msg = (
+                "FolderPartition instance constructed without providing explicit generics. "
+                "We can't construct partition folder types properly without this. "
+                "You should write e.g. "
+                "attr: FolderPartition[SomeClass] = FolderPartition[SomeClass](...) not bare FolderPartition(...)"
+            )
+            raise TypeError(msg)
+        else:
+            # bind the captured type parameter to the instance
+            self.partition_class = type(self)._type_param  # type:ignore[attr-defined]
+
+    @classmethod
+    def __class_getitem__(cls, item: Type[U]) -> Self:
+        """Class Getitem is called when you call square brackets (getitem) on a class.
+        i.e. when you call the constructor of a generic class with explicit type annotations
+        f= FolderPartition[SomeClass](path)
+
+        We override __class_getitem__ to create a subclass of FolderPartition on which we store
+        the class provided in square brackets so our instance f has access to it. We do this at
+        runtime using the 3-argument call to type() which creates new types.
+
+        in spirit, we're creating:
+        ```
+        class FolderParitionSomeClass(FolderPartition[SomeClass]):
+            _type_param = SomeClass
+
+
+        f = FolderParitionSomeClass(path)
+        ```
+        inline dynamically.
+        """
+        if isinstance(item, TypeVar):
+            # This is called at class definition time where item is a Generic, don't do anything crazy
+            # (this is equivalent to super().__class_getitem__(item))
+            return cls
+        # Otherwise we specialise PartitionedFolder[Kind]
+        # and make a new subclass of PartitionedFolder, which we call PartitionedFolder[Kind_static_folders_dynamic]
+        # with the suffix embedded so that a user can see there's some spooky magic going on if
+        # they ever assign x = FolderPartition[SomeClass] and look at x
+        cache_key = (cls, item)
+        if cache_key in _class_getitem_cache:
+            return _class_getitem_cache[cache_key]  # type: ignore[return-value]
+        subclass = type(f"{cls.__name__}[{item.__name__}_static_folders_dynamic]", (cls,), {})
+        subclass._type_param = item  # type: ignore[attr-defined]
+        _class_getitem_cache[cache_key] = subclass
+        return subclass  # type: ignore[return-value]
 
     def __fspath__(self) -> str:
         return str(self.location)

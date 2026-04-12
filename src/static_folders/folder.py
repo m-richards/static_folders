@@ -5,9 +5,9 @@ import os
 import sys
 import typing
 from pathlib import Path
-from typing import Sequence, Any, Callable, TypeVar, ClassVar, Type
+from typing import Any, Callable, ClassVar, Sequence, Type, TypeVar
 
-from attrs import define, field, Factory
+from attrs import Factory, define, field
 from typing_extensions import Self
 
 from static_folders.folder_interface import FolderLike
@@ -58,7 +58,11 @@ class Folder(FolderLike):
         "_raw_location",
         "_child_folders",
     ]
-    _child_folders: list[Folder] = field(init=False, default=Factory(list))
+    _child_folders: list[FolderLike] = field(init=False, default=Factory(list))
+
+    @classmethod
+    def from_path(cls, path: Path) -> Self:
+        return cls(path)
 
     @classmethod
     def from_string(cls, path: str) -> Self:
@@ -68,7 +72,7 @@ class Folder(FolderLike):
     def __fspath__(self) -> str:
         return str(self.location)
 
-    def __attrs_post_init__(self) -> None:
+    def __attrs_post_init__(self) -> None:  # noqa: PLR0912
         self.location = Path(os.fspath(self._raw_location))
         cls = type(self)
         # custom support for annotations which are sub-types of Folder, or Path
@@ -95,16 +99,47 @@ class Folder(FolderLike):
             )
             raise TypeError(msg)
 
+        # resolve all the child attributes from annotations into instance objects
         for attrib_name, annotation in annotations.items():
             if attrib_name in self._reserved_attributes:
                 continue
             if isinstance(annotation, type):
-                if issubclass(annotation, Folder):  # i.e. attribute foo: Folder - a class constructor
+                if issubclass(annotation, FolderLike):  # e.g. `foo: Folder`
                     value = getattr(self, attrib_name, None)
+                    folder_name = None
                     if value is None:  # check default wasn't given
-                        value = annotation(self.location / attrib_name)
+                        folder_name = attrib_name
+                    elif isinstance(value, FolderLike):  # `foo: Folder = Folder("bar")` -> foo / "bar"
+                        folder_name = value.location.name
+                    elif isinstance(value, Path):  # `foo: Folder = Path("bar")`
+                        # This is not permitted by the type system, but is an easy typo someone could make
+                        # which would lead to confusing behaviour - the path wouldn't be "seen" at all.
+                        msg = (
+                            f"Annotating an attribute with a FolderLike type and a Path value is incorrect "
+                            f"and not supported. For class `{type(self).__name__}` got:\n"
+                            f"'{attrib_name}: {annotation} = {value!r}'\n"
+                            f"If you intended to declare a subfolder with a custom folder name, "
+                            f"you should use `{attrib_name}: FolderLike = FolderLike(name)` instead.\n"
+                            f"If you intended to declare a file within the folder, you should use"
+                            f" `{attrib_name}: Path: Path(name)` "
+                            f"instead."
+                        )
+                        raise TypeError(msg)
+                    else:
+                        pass  # subclasses or lambda come through this passage
+                        # print("pre-existing thing", value)
+                    if folder_name is not None:
+                        try:
+                            value = annotation.from_path(self.location / folder_name)
+                        except TypeError as e:
+                            msg = (
+                                f"Building Class {type(self).__name__} failed on constructing attribute:\n"
+                                f"'{attrib_name}: {annotation} = {value!r}' with attached error"
+                            )
+                            raise TypeError(msg) from e
                         setattr(self, attrib_name, value)
-                    self._child_folders.append(value)
+
+                        self._child_folders.append(value)
                     # else: # extract path from given default
                     #     setattr(self, attrib_name, annotation(self.location / os.fspath(value)))
 

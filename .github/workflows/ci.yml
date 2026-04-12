@@ -24,10 +24,10 @@ jobs:
         run: |
           uv pip install ruff
 
-      - name: Run Ruff format & Check
+      - name: Run Ruff format
         run: ruff format --check .
 
-      - name: Run flake8
+      - name: Run ruff check
         run: ruff check
 
   type-check:
@@ -36,7 +36,7 @@ jobs:
     name: Type-check (mypy)
     strategy:
       matrix:
-        python-version: [3.7, 3.13]
+        python-version: [3.7, 3.14]
     steps:
       - uses: actions/checkout@v4
 
