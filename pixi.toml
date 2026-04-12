@@ -30,7 +30,7 @@ static_folders = { path = ".", editable = true}
 
 [feature.py37.dependencies]
 python = "3.7.*"
-typing-extensions = "==4.7.1"
+typing-extensions = "*"
 
 [feature.py37.tasks]
 test = "pytest -rP ."
