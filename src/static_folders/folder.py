@@ -105,25 +105,12 @@ class Folder(FolderLike):
                 continue
             if isinstance(annotation, type):
                 if issubclass(annotation, FolderLike):  # e.g. `foo: Folder`
-                    attrib_name, result, = self._handle_folder_like_annotations(annotation, attrib_name)
+                    result = self._handle_folder_like_annotations(annotation, attrib_name)
                     setattr(self, attrib_name, result)
                     self._child_folders.append(result)
 
                 elif issubclass(annotation, Path):
-                    provided_path: Path = getattr(self, attrib_name)
-                    if not isinstance(provided_path, Path):
-                        msg = (
-                            f"Annotation for attribute {attrib_name!r} was Path, "
-                            f"but provided attribute was {provided_path!r}"
-                        )
-                        raise TypeError(msg)
-                    if provided_path.is_absolute():
-                        msg = (
-                            "Provided path instances must be relative paths, these are treated as "
-                            "paths relative to the location of the Folder stance. This was not true "
-                            f"for {attrib_name!r}"
-                        )
-                        raise TypeError(msg)
+                    provided_path = self._handle_path_annotations(attrib_name)
                     setattr(self, attrib_name, self.location / provided_path)
                 elif issubclass(annotation, str):
                     value = getattr(self, attrib_name, "")
@@ -139,7 +126,24 @@ class Folder(FolderLike):
                     )
                     raise TypeError(msg)
 
-    def _handle_folder_like_annotations(self, annotation, attrib_name)->tuple[str,FolderLike]:
+    def _handle_path_annotations(self, attrib_name)->Path:
+        provided_path: Path = getattr(self, attrib_name)
+        if not isinstance(provided_path, Path):
+            msg = (
+                f"Annotation for attribute {attrib_name!r} was Path, "
+                f"but provided attribute was {provided_path!r}"
+            )
+            raise TypeError(msg)
+        if provided_path.is_absolute():
+            msg = (
+                "Provided path instances must be relative paths, these are treated as "
+                "paths relative to the location of the Folder stance. This was not true "
+                f"for {attrib_name!r}"
+            )
+            raise TypeError(msg)
+        return provided_path
+
+    def _handle_folder_like_annotations(self, annotation, attrib_name)->FolderLike:
         value = getattr(self, attrib_name, None)
         folder_name = None
         if value is None:  # `foo: Folder i.e. no value given
@@ -173,7 +177,7 @@ class Folder(FolderLike):
                 f"'{attrib_name}: {annotation.__name__} = {value!r}' with attached error"
             )
             raise TypeError(msg) from e
-        return attrib_name, result
+        return result
 
     def to_path(self) -> Path:
         return self.location
