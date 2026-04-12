@@ -220,10 +220,10 @@ def test_folder_partition_generics_required(path_not_on_disk: Path) -> None:
         a: FolderPartition[AsgsYearDir]
 
     test = _Custom5(path_not_on_disk)
-    assert test.a.get_partition("baz").sa1 == path_not_on_disk / "a" / "baz" / "sa1.gpkg"
+    assert test.a.get_partition("baz").sa1 == path_not_on_disk / "a" / "baz" / "SA1.gpkg"
 
     class _Custom6(AsgsYearDir):
         a: FolderPartition[AsgsYearDir] = FolderPartition[AsgsYearDir]("foo")
 
     test2 = _Custom6(path_not_on_disk)
-    assert test2.a.get_partition("baz").sa1 == path_not_on_disk / "foo" / "baz" / "sa1.gpkg"
+    assert test2.a.get_partition("baz").sa1 == path_not_on_disk / "foo" / "baz" / "SA1.gpkg"
