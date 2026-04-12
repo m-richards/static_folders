@@ -26,10 +26,10 @@ T = TypeVar("T", bound="Folder")
 def _get_annotations(obj: Callable[..., object] | type[Any] | ModuleType) -> dict[str, object]:
     # mypy failure on python 3.14, unsure why
     # if sys.version_info >= (3, 14):
-    #     import annotationlib  # noqa: PLC0415
+    #     import annotationlib  # noqa: PLC0415, RUF100
     #
     #     return annotationlib.get_annotations(obj)
-        # equivalent to below, but the new canonical way
+    # equivalent to below, but the new canonical way
     if sys.version_info >= (3, 10):
         return inspect.get_annotations(obj)
     # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
