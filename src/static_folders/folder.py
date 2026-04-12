@@ -22,8 +22,6 @@ U = TypeVar("U", bound="Folder")
 PathLike = typing.Union[str, Path]
 T = TypeVar("T", bound="Folder")
 
-V = TypeVar("V")
-
 
 def _get_annotations(obj: Callable[..., object] | type[Any] | ModuleType) -> dict[str, object]:
     if sys.version_info >= (3, 10):
@@ -63,7 +61,7 @@ class Folder(FolderLike):
     _child_folders: list[FolderLike] = field(init=False, default=Factory(list))
 
     @classmethod
-    def from_path(cls, path: Path) -> Folder:
+    def from_path(cls, path: Path) -> Self:
         return cls(path)
 
     @classmethod
@@ -121,7 +119,7 @@ class Folder(FolderLike):
                             f"and not supported. For class `{type(self).__name__}` got:\n"
                             f"'{attrib_name}: {annotation} = {value!r}'\n"
                             f"If you intended to declare a subfolder with a custom folder name, "
-                            f"you should use `{attrib_name}: FolderLike: FolderLike(name)` instead.\n"
+                            f"you should use `{attrib_name}: FolderLike = FolderLike(name)` instead.\n"
                             f"If you intended to declare a file within the folder, you should use"
                             f" `{attrib_name}: Path: Path(name)` "
                             f"instead."

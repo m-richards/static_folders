@@ -16,6 +16,9 @@ if typing.TYPE_CHECKING:
 T = TypeVar("T", bound=Folder)
 U = TypeVar("U", bound=Folder)
 
+# module level, top of partitioned_folder.py
+_class_getitem_cache: dict[tuple[type, type], type] = {}
+
 
 @define(slots=False)
 class FolderPartition(FolderLike[U]):
@@ -58,17 +61,14 @@ class FolderPartition(FolderLike[U]):
         the class provided in square brackets so our instance f has access to it. We do this at
         runtime using the 3-argument call to type() which creates new types.
 
-        in spirit, we're doing:
+        in spirit, we're creating:
         ```
         class FolderParitionSomeClass(FolderPartition[SomeClass]):
             _type_param = SomeClass
 
-
         f = FolderParitionSomeClass(path)
-        # or more directly
         ```
-        inline dynamically. Note right now there's no cache, so each FolderParitionSomeClass instance
-        is unrelated.
+        inline dynamically.
         """
         if isinstance(item, TypeVar):
             # This is called at class definition time where item is a Generic, don't do anything crazy
@@ -78,9 +78,13 @@ class FolderPartition(FolderLike[U]):
         # and make a new subclass of PartitionedFolder, which we call PartitionedFolder[Kind_static_folders_dynamic]
         # with the suffix embedded so that a user can see there's some spooky magic going on if
         # they ever assign x = FolderPartition[SomeClass] and look at x
+        cache_key = (cls, item)
+        if cache_key in _class_getitem_cache:
+            return _class_getitem_cache[cache_key]  # type: ignore[return-value]
         subclass = type(f"{cls.__name__}[{item.__name__}_static_folders_dynamic]", (cls,), {})
-        subclass._type_param = item  # type:ignore[attr-defined]
-        return subclass  # type:ignore[return-value]
+        subclass._type_param = item  # type: ignore[attr-defined]
+        _class_getitem_cache[cache_key] = subclass
+        return subclass  # type: ignore[return-value]
 
     def __fspath__(self) -> str:
         return str(self.location)
