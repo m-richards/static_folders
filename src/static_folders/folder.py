@@ -24,6 +24,11 @@ T = TypeVar("T", bound="Folder")
 
 
 def _get_annotations(obj: Callable[..., object] | type[Any] | ModuleType) -> dict[str, object]:
+    if sys.version_info >= (3, 14):
+        import annotationlib  # noqa: PLC0415
+
+        return annotationlib.get_annotations(obj)
+        # equivalent to below, but the new canonical way
     if sys.version_info >= (3, 10):
         return inspect.get_annotations(obj)
     # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
@@ -72,7 +77,7 @@ class Folder(FolderLike):
     def __fspath__(self) -> str:
         return str(self.location)
 
-    def __attrs_post_init__(self) -> None:  # noqa: PLR0912
+    def __attrs_post_init__(self) -> None:
         self.location = Path(os.fspath(self._raw_location))
         cls = type(self)
         # custom support for annotations which are sub-types of Folder, or Path
@@ -126,13 +131,10 @@ class Folder(FolderLike):
                     )
                     raise TypeError(msg)
 
-    def _handle_path_annotations(self, attrib_name)->Path:
+    def _handle_path_annotations(self, attrib_name: str) -> Path:
         provided_path: Path = getattr(self, attrib_name)
         if not isinstance(provided_path, Path):
-            msg = (
-                f"Annotation for attribute {attrib_name!r} was Path, "
-                f"but provided attribute was {provided_path!r}"
-            )
+            msg = f"Annotation for attribute {attrib_name!r} was Path, but provided attribute was {provided_path!r}"
             raise TypeError(msg)
         if provided_path.is_absolute():
             msg = (
@@ -143,7 +145,7 @@ class Folder(FolderLike):
             raise TypeError(msg)
         return provided_path
 
-    def _handle_folder_like_annotations(self, annotation, attrib_name)->FolderLike:
+    def _handle_folder_like_annotations(self, annotation: type[FolderLike], attrib_name: str) -> FolderLike:
         value = getattr(self, attrib_name, None)
         folder_name = None
         if value is None:  # `foo: Folder i.e. no value given
@@ -166,9 +168,11 @@ class Folder(FolderLike):
             raise TypeError(msg)
         else:
             # TODO raise or warn?
-            raise NotImplementedError(f"Unhandled type annotation type, got {type(value)}")
+            err = f"Unhandled type annotation type, got {type(value)}"
+            raise NotImplementedError(err)
         if folder_name is None:
-            raise ValueError("Folder name inferred as None, this code path shouldn't have been triggered")
+            err = "Folder name inferred as None, this code path shouldn't have been triggered"
+            raise ValueError(err)
         try:
             result: FolderLike = annotation.from_path(self.location / folder_name)
         except TypeError as e:
