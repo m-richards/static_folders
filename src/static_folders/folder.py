@@ -4,8 +4,8 @@ import inspect
 import os
 import sys
 import typing
-from pathlib import Path, PureWindowsPath, PurePosixPath
-from typing import Sequence, Any, Callable, TypeVar, ClassVar, Type, overload
+from pathlib import Path
+from typing import Sequence, Any, Callable, TypeVar, ClassVar, Type
 
 from attrs import define, field, Factory
 from typing_extensions import Self
@@ -23,30 +23,6 @@ PathLike = typing.Union[str, Path]
 T = TypeVar("T", bound="Folder")
 
 V = TypeVar("V")
-
-if sys.platform == "win32":
-
-    class _FolderName(PureWindowsPath):
-        """TODO this subclassing might be a bad idea"""
-else:
-
-    class FolderName(PurePosixPath):
-        """TODO this subclassing might be a bad idea"""
-
-
-@overload
-def custom_name(name: str, annotation_type: None = ...) -> Folder: ...
-
-
-@overload
-def custom_name(name: str, annotation_type: Type[U] = ...) -> U: ...
-
-
-def custom_name(name: str, annotation_type: Type[U] | None = None) -> U | Folder:
-    # We are lying to the type system here, and assuming users don't use this in a context where they could
-    # see the return value. We only use the distinct type here as a marker to tell folders from files
-    # TODO should this be implemented via Annotated[str, "custom_folder_name"] instead?
-    return _FolderName(name)  # type:ignore[return-value]
 
 
 def _get_annotations(obj: Callable[..., object] | type[Any] | ModuleType) -> dict[str, object]:
@@ -125,36 +101,30 @@ class Folder(FolderLike):
             )
             raise TypeError(msg)
 
+        # resolve all the child attributes from annotations into instance objects
         for attrib_name, annotation in annotations.items():
             if attrib_name in self._reserved_attributes:
                 continue
             if isinstance(annotation, type):
-                if issubclass(annotation, FolderLike):  # i.e. attribute foo: Folder - a class constructor
+                if issubclass(annotation, FolderLike):  # e.g. `foo: Folder`
                     value = getattr(self, attrib_name, None)
                     folder_name = None
                     if value is None:  # check default wasn't given
                         folder_name = attrib_name
-                    elif isinstance(value, _FolderName):
-                        folder_name = value.name
-                    elif isinstance(value, FolderLike):
+                    elif isinstance(value, FolderLike):  # `foo: Folder = Folder("bar")` -> foo / "bar"
+                        folder_name = value.location.name
+                    elif isinstance(value, Path):  # `foo: Folder = Path("bar")`
+                        # This is not permitted by the type system, but is an easy typo someone could make
+                        # which would lead to confusing behaviour - the path wouldn't be "seen" at all.
                         msg = (
-                            f"Providing a FolderLike annotation with a FolderLike value "
-                            f"({attrib_name}: {annotation} = {value}) is deprecated, "
-                            "behaviour was not sound with respect to child file paths. If the intention "
-                            "was to specify a custom folder name, you should "
-                            f"migrate to {attrib_name}: {annotation} = sf.custom_name(...) "
-                        )
-                        raise TypeError(msg)
-                    elif isinstance(value, Path):
-                        # TODO, if we're doing all this at runtime, do we get it at type checking time?
-                        # and if not, does that defeat the purpose of this being staticly typed.
-                        msg = (
-                            f"Annotating an attribute with a FolderLike type and a Path value is ambiguous "
-                            f"and not supported (got {attrib_name}: {annotation} = {value}). "
+                            f"Annotating an attribute with a FolderLike type and a Path value is incorrect "
+                            f"and not supported. For class `{type(self).__name__}` got:\n"
+                            f"'{attrib_name}: {annotation} = {value!r}'\n"
                             f"If you intended to declare a subfolder with a custom folder name, "
-                            f"you should update the Path value to a sf.custom_name(...) value instead.\n"
-                            f"If you intended to declare a file within the folder, you should update the "
-                            f"FolderLike annotation to be a Path instead."
+                            f"you should use `{attrib_name}: FolderLike: FolderLike(name)` instead.\n"
+                            f"If you intended to declare a file within the folder, you should use"
+                            f" `{attrib_name}: Path: Path(name)` "
+                            f"instead."
                         )
                         raise TypeError(msg)
                     else:

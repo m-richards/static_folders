@@ -7,7 +7,6 @@ import pytest
 from attrs import define
 from static_folders import Folder, FolderPartition
 from static_folders.partitioned_folder import EnumeratedFolderPartition
-import static_folders as sf
 
 
 @pytest.fixture
@@ -86,18 +85,29 @@ def test_create(tmp_path: Path) -> None:
     assert not n.nest.file.is_file()
 
 
-def test_nested(tmp_path: Path) -> None:
+@pytest.mark.parametrize("custom_name_func", [True, False])
+def test_nested(tmp_path: Path, custom_name_func: bool) -> None:
     tmp_path = Path("test")  # needs to not be "." or there's a soundness issue around deferred
 
     class PhotoYearFolder(Folder):
         index: Path = Path("index.md")
 
-    class Photos(Folder):
-        temp: Folder
-        y2024: PhotoYearFolder
-        # provide concrete path which doesn't have y prefix
-        y2025: PhotoYearFolder = sf.custom_name("2025", annotation_type=PhotoYearFolder)
-        readme: Path = Path("readme.md")
+    if custom_name_func:
+
+        class Photos(Folder):
+            temp: Folder
+            y2024: PhotoYearFolder
+            # provide concrete path which doesn't have y prefix
+            y2025: PhotoYearFolder = PhotoYearFolder("2025")
+            readme: Path = Path("readme.md")
+    else:
+
+        class Photos(Folder):  # type:ignore[no-redef]
+            temp: Folder
+            y2024: PhotoYearFolder
+            # provide concrete path which doesn't have y prefix
+            y2025: PhotoYearFolder = PhotoYearFolder("2025")
+            readme: Path = Path("readme.md")
 
     photos = Photos(tmp_path)
     assert isinstance(photos.readme, Path)
@@ -122,7 +132,7 @@ def test_exotic_attributes_okay(tmp_path: Path) -> None:
         class Nested(Folder):
             attrib = lambda x: print(x)  # noqa:E731
 
-        subfolder: A = sf.custom_name("custom_name_not_subfolder", annotation_type=A)
+        subfolder: A = A("custom_nameed_subfolder")
 
         readme: Path = Path("readme.txt")
 
@@ -242,25 +252,35 @@ def test_attrs_subclass_post_init(path_not_on_disk: Path) -> None:
 def test_attrs_subclass_post_init_missing(path_not_on_disk: Path) -> None:
     # documenting that if we call super properly, this behaves properly.
     # but you need to call super!
+    class CustomWorking(Folder):
+        def __attrs_post_init__(self) -> None:
+            super().__attrs_post_init__()
+
+    a = CustomWorking(path_not_on_disk)
+    assert a.get_subfolder("foo") == path_not_on_disk / "foo"
+
     # If we had an api based around decorators, this wouldn't come up
     class Custom(Folder):
         def __attrs_post_init__(self) -> None:
             pass
 
-    a = Custom(path_not_on_disk)
-    a.get_subfolder("foo")
+    b = Custom(path_not_on_disk)
+    b.get_subfolder("foo")
 
 
 def test_custom_folder_names(path_not_on_disk: Path) -> None:
+    # https://github.com/m-richards/static_folders/issues/11
     class Custom(Folder):
         a: Folder
-        b: Folder = sf.custom_name("02_b", annotation_type=Folder)
-        c: AsgsYearDir = sf.custom_name("02_c", annotation_type=AsgsYearDir)
+        b: Folder = Folder("02_b")
+        c: AsgsYearDir = AsgsYearDir("02_c")
 
     folder = Custom(path_not_on_disk)
     assert isinstance(folder.a, Folder)
     assert folder.a.to_path() == path_not_on_disk / "a"
+    # this needs to be under path_not_on_disk, not a relative path to cwd
     assert folder.b.to_path() == path_not_on_disk / "02_b"
+    assert folder.c.sa1 == path_not_on_disk / "02_c" / "SA1.gpkg"
 
 
 def test_ambiguous_annotations_error_out(path_not_on_disk: Path) -> None:
@@ -269,37 +289,9 @@ def test_ambiguous_annotations_error_out(path_not_on_disk: Path) -> None:
 
     with pytest.raises(
         TypeError,
-        match=re.escape(
-            "Annotating an attribute with a FolderLike type and a Path value is ambiguous and not supported"
-        ),
+        match=re.escape("Annotating an attribute with a FolderLike type and a Path value is incorrect"),
     ):
         Custom(path_not_on_disk)
-
-
-def test_eager_folder_default_errors(path_not_on_disk: Path) -> None:
-    class Custom(Folder):
-        a: Folder = Folder("foo")
-
-    with pytest.raises(
-        TypeError,
-        match=re.escape("Providing a FolderLike annotation with a FolderLike value ")
-        + ".*"
-        + re.escape(" is deprecated"),
-    ):
-        Custom(path_not_on_disk)
-
-
-def test_eager_folder_default_errors_folder_partition(path_not_on_disk: Path) -> None:
-    class Custom2(Folder):
-        a: FolderPartition = FolderPartition[Folder]("foo")
-
-    with pytest.raises(
-        TypeError,
-        match=re.escape("Providing a FolderLike annotation with a FolderLike value ")
-        + ".*"
-        + re.escape(" is deprecated"),
-    ):
-        Custom2(path_not_on_disk)
 
 
 def test_folder_partition_generics_required(path_not_on_disk: Path) -> None:
