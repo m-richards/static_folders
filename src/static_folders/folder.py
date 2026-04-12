@@ -105,43 +105,9 @@ class Folder(FolderLike):
                 continue
             if isinstance(annotation, type):
                 if issubclass(annotation, FolderLike):  # e.g. `foo: Folder`
-                    value = getattr(self, attrib_name, None)
-                    folder_name = None
-                    if value is None:  # check default wasn't given
-                        folder_name = attrib_name
-                    elif isinstance(value, FolderLike):  # `foo: Folder = Folder("bar")` -> foo / "bar"
-                        folder_name = value.location.name
-                    elif isinstance(value, Path):  # `foo: Folder = Path("bar")`
-                        # This is not permitted by the type system, but is an easy typo someone could make
-                        # which would lead to confusing behaviour - the path wouldn't be "seen" at all.
-                        msg = (
-                            f"Annotating an attribute with a FolderLike type and a Path value is incorrect "
-                            f"and not supported. For class `{type(self).__name__}` got:\n"
-                            f"'{attrib_name}: {annotation.__name__} = {value!r}'\n"
-                            f"If you intended to declare a subfolder with a custom folder name, "
-                            f"you should use `{attrib_name}: FolderLike = FolderLike(name)` instead.\n"
-                            f"If you intended to declare a file within the folder, you should use"
-                            f" `{attrib_name}: Path: Path(name)` "
-                            f"instead."
-                        )
-                        raise TypeError(msg)
-                    else:
-                        pass  # subclasses or lambda come through this passage
-                        # print("pre-existing thing", value)
-                    if folder_name is not None:
-                        try:
-                            value = annotation.from_path(self.location / folder_name)
-                        except TypeError as e:
-                            msg = (
-                                f"Building Class {type(self).__name__} failed on constructing attribute:\n"
-                                f"'{attrib_name}: {annotation.__name__} = {value!r}' with attached error"
-                            )
-                            raise TypeError(msg) from e
-                        setattr(self, attrib_name, value)
-
-                        self._child_folders.append(value)
-                    # else: # extract path from given default
-                    #     setattr(self, attrib_name, annotation(self.location / os.fspath(value)))
+                    attrib_name, result, = self._handle_folder_like_annotations(annotation, attrib_name)
+                    setattr(self, attrib_name, result)
+                    self._child_folders.append(result)
 
                 elif issubclass(annotation, Path):
                     provided_path: Path = getattr(self, attrib_name)
@@ -172,6 +138,42 @@ class Folder(FolderLike):
                         f"  - Specify a class variable string -> annotate with `ClassVar[str]` instead\n"
                     )
                     raise TypeError(msg)
+
+    def _handle_folder_like_annotations(self, annotation, attrib_name)->tuple[str,FolderLike]:
+        value = getattr(self, attrib_name, None)
+        folder_name = None
+        if value is None:  # `foo: Folder i.e. no value given
+            folder_name = attrib_name
+        elif isinstance(value, FolderLike):  # `foo: Folder = Folder("bar")` -> foo / "bar"
+            folder_name = value.location.name
+        elif isinstance(value, Path):  # `foo: Folder = Path("bar")`
+            # This is not permitted by the type system, but is an easy typo someone could make
+            # which would lead to confusing behaviour - the path wouldn't be "seen" at all.
+            msg = (
+                f"Annotating an attribute with a FolderLike type and a Path value is incorrect "
+                f"and not supported. For class `{type(self).__name__}` got:\n"
+                f"'{attrib_name}: {annotation.__name__} = {value!r}'\n"
+                f"If you intended to declare a subfolder with a custom folder name, "
+                f"you should use `{attrib_name}: FolderLike = FolderLike(name)` instead.\n"
+                f"If you intended to declare a file within the folder, you should use"
+                f" `{attrib_name}: Path: Path(name)` "
+                f"instead."
+            )
+            raise TypeError(msg)
+        else:
+            # TODO raise or warn?
+            raise NotImplementedError(f"Unhandled type annotation type, got {type(value)}")
+        if folder_name is None:
+            raise ValueError("Folder name inferred as None, this code path shouldn't have been triggered")
+        try:
+            result: FolderLike = annotation.from_path(self.location / folder_name)
+        except TypeError as e:
+            msg = (
+                f"Building Class {type(self).__name__} failed on constructing attribute:\n"
+                f"'{attrib_name}: {annotation.__name__} = {value!r}' with attached error"
+            )
+            raise TypeError(msg) from e
+        return attrib_name, result
 
     def to_path(self) -> Path:
         return self.location
