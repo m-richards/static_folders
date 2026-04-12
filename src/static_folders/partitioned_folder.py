@@ -66,6 +66,7 @@ class FolderPartition(FolderLike[U]):
         class FolderParitionSomeClass(FolderPartition[SomeClass]):
             _type_param = SomeClass
 
+
         f = FolderParitionSomeClass(path)
         ```
         inline dynamically.

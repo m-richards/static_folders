@@ -9,11 +9,14 @@ version = "0.1.0"
 [tasks]
 format = "uvx ruff@latest format"
 lint = "uvx ruff@latest check"
+ruff-fix = "uvx ruff@latest check --fix"
 type_check = "uvx --with . --with attrs --with pytest mypy ."
 # SyntaxError: Non-UTF-8 code starting with '\xe8' in Scripts\mypy.exe
 #type_check_min = "uvx --python 3.7 --with . --with attrs mypy python -m mypy ."
 # TODO do with depends-on
-check_all = [{ task = "format" }, { task = "lint" }, { task = "type_check" }]
+check-all = [{ task = "format" }, { task = "lint" }, { task = "type_check" }]
+
+
 ci_all_checks = {cmd = "pixi run format; pixi run lint; pixi run type_check"}
 #ci_tests = {cmd = "pixi run format; pixi run lint; pixi run type_check"}
 

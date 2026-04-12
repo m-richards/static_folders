@@ -7,7 +7,6 @@ import pytest
 from attrs import define
 
 from static_folders import Folder, FolderPartition
-from static_folders.partitioned_folder import EnumeratedFolderPartition
 
 
 @pytest.fixture
@@ -135,10 +134,6 @@ class AsgsYearDir(Folder):
 
     sa1: Path = Path("SA1.gpkg")
     sa2: Path = Path("SA2.gpkg")
-
-
-
-
 
 
 def test_attrs_subclass_post_init(path_not_on_disk: Path) -> None:

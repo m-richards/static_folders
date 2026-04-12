@@ -1,8 +1,9 @@
 from pathlib import Path
+
 import pytest
+from test_basic import AsgsYearDir
 
 from static_folders import EnumeratedFolderPartition, Folder, FolderPartition
-from test_basic import AsgsYearDir
 
 
 @pytest.fixture
@@ -10,8 +11,10 @@ def path_not_on_disk(tmp_path: Path) -> Path:
     # get a path which pytest isn't mkdiring
     return tmp_path / "new_dir_not_on_disk"
 
+
 class AsgsLayersByYear(FolderPartition[AsgsYearDir]):
     pass
+
 
 def test_partitioned_folder(path_not_on_disk: Path) -> None:
     f = AsgsLayersByYear(path_not_on_disk)
@@ -98,8 +101,9 @@ def test_enumerated_subfolder_logical(path_not_on_disk: Path) -> None:
     assert type(f.get_subfolder("foo", subfolder_class=AsgsYearDir)) == AsgsYearDir  # noqa: E721
     assert type(f.get_partition("2016")) == AsgsYearDir  # noqa: E721
 
+
 def test_folder_partition_class_getitem_caching(path_not_on_disk: Path) -> None:
-    #FolderPartition[X] must return the same class object on repeated calls.
+    # FolderPartition[X] must return the same class object on repeated calls.
     assert FolderPartition[AsgsYearDir] is FolderPartition[AsgsYearDir]
 
     class MultiPartition(Folder):
