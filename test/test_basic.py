@@ -44,11 +44,12 @@ def test_str_annotation_fails(tmp_path: Path) -> None:
     # Footgun on string annotations
     @define
     class SubFolder(Folder):
+        # don't permit storing strings as attributes, should be Path for files, or FolderLike for folders
         file: str = "file.txt"
 
     with pytest.raises(
         TypeError,
-        match=re.escape("Folder subclasses do not support raw str annotated fields, to avoid confusion"),
+        match=re.escape("Folder subclasses do not support raw str annotated fields to avoid ambiguity"),
     ):
         SubFolder(tmp_path)
 
