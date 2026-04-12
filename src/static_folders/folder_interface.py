@@ -1,9 +1,9 @@
 from __future__ import annotations
-from abc import ABC, abstractmethod
 
 import typing
+from abc import ABC, abstractmethod
 
-from typing_extensions import Type, TypeVar, Generic
+from typing_extensions import Generic, Type, TypeVar
 
 if typing.TYPE_CHECKING:
     from pathlib import Path

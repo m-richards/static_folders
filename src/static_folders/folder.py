@@ -5,9 +5,9 @@ import os
 import sys
 import typing
 from pathlib import Path
-from typing import Sequence, Any, Callable, TypeVar, ClassVar, Type
+from typing import Any, Callable, ClassVar, Sequence, Type, TypeVar
 
-from attrs import define, field, Factory
+from attrs import Factory, define, field
 from typing_extensions import Self
 
 from static_folders.folder_interface import FolderLike

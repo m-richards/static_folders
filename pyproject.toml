@@ -46,6 +46,8 @@ typing-modules = []
 
 
 select = [
+    # isort
+    "I",
   # pyflakes
   "F",
   # pycodestyle

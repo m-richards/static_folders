@@ -5,6 +5,7 @@ from typing import ClassVar
 
 import pytest
 from attrs import define
+
 from static_folders import Folder, FolderPartition
 from static_folders.partitioned_folder import EnumeratedFolderPartition
 

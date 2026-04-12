@@ -5,7 +5,7 @@ import typing
 from pathlib import Path
 
 from attrs import define, field
-from typing_extensions import TypeVar, ClassVar, Type, Self
+from typing_extensions import ClassVar, Self, Type, TypeVar
 
 from static_folders import Folder
 from static_folders.folder_interface import FolderLike

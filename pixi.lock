@@ -1107,7 +1107,7 @@ packages:
 - pypi: ./
   name: static-folders
   version: 0.3.0
-  sha256: 63a4aaa4383e0641f49a084956dcfccd06ba224d9b4221152c3a12500a21f809
+  sha256: 41e65b3b2383719357d9f7c669bc69c3e5ceb408d7000623c8821b51ae2bb13c
   requires_dist:
   - attrs>=24.2.0
   - typing-extensions>=4.7.1 ; python_full_version < '3.13'
