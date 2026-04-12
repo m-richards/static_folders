@@ -131,7 +131,14 @@ class Folder(FolderLike):
                         pass  # subclasses or lambda come through this passage
                         # print("pre-existing thing", value)
                     if folder_name is not None:
-                        value = annotation.from_path(self.location / folder_name)
+                        try:
+                            value = annotation.from_path(self.location / folder_name)
+                        except TypeError as e:
+                            msg = (
+                                f"Building Class {type(self).__name__} failed on constructing attribute:\n"
+                                f"'{attrib_name}: {annotation} = {value!r}' with attached error"
+                            )
+                            raise TypeError(msg) from e
                         setattr(self, attrib_name, value)
 
                         self._child_folders.append(value)

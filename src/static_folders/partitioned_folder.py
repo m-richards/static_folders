@@ -41,7 +41,7 @@ class FolderPartition(FolderLike[U]):
                 "FolderPartition instance constructed without providing explicit generics. "
                 "We can't construct partition folder types properly without this. "
                 "You should write e.g. "
-                "FolderPartition[SomeClass](...) not bare FolderPartition(...)"
+                "attr: FolderPartition[SomeClass] = FolderPartition[SomeClass](...) not bare FolderPartition(...)"
             )
             raise TypeError(msg)
         else:

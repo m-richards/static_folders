@@ -302,6 +302,29 @@ def test_folder_partition_generics_required(path_not_on_disk: Path) -> None:
         class _Custom2(Folder):
             a: FolderPartition = FolderPartition("foo")
 
+    with pytest.raises(
+        TypeError, match=re.escape("FolderPartition instance constructed without providing explicit generics")
+    ):
+
+        class _Custom3(Folder):
+            a: FolderPartition[AsgsYearDir] = FolderPartition("foo")
+
+    class _Custom4(Folder):
+        a: FolderPartition = FolderPartition[AsgsYearDir]("foo")
+
+    with pytest.raises(TypeError, match=re.escape("Building Class _Custom4 failed on constructing attribute")):
+        # TODO this case fails at instantiation time, not class initialisation, that's annoying
+        _Custom4(path_not_on_disk)
+
     # case which is permitted
-    class _Custom3(Folder):
-        a: FolderPartition = FolderPartition[Folder]("foo")
+    class _Custom5(AsgsYearDir):
+        a: FolderPartition[AsgsYearDir]
+
+    test = _Custom5(path_not_on_disk)
+    assert test.a.get_partition("baz").sa1 == path_not_on_disk / "a" / "baz" / "sa1.gpkg"
+
+    class _Custom6(AsgsYearDir):
+        a: FolderPartition[AsgsYearDir] = FolderPartition[AsgsYearDir]("foo")
+
+    test2 = _Custom6(path_not_on_disk)
+    assert test2.a.get_partition("baz").sa1 == path_not_on_disk / "foo" / "baz" / "sa1.gpkg"
