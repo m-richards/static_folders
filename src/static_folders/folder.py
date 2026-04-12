@@ -24,10 +24,11 @@ T = TypeVar("T", bound="Folder")
 
 
 def _get_annotations(obj: Callable[..., object] | type[Any] | ModuleType) -> dict[str, object]:
-    if sys.version_info >= (3, 14):
-        import annotationlib  # noqa: PLC0415
-
-        return annotationlib.get_annotations(obj)
+    # mypy failure on python 3.14, unsure why
+    # if sys.version_info >= (3, 14):
+    #     import annotationlib  # noqa: PLC0415
+    #
+    #     return annotationlib.get_annotations(obj)
         # equivalent to below, but the new canonical way
     if sys.version_info >= (3, 10):
         return inspect.get_annotations(obj)
